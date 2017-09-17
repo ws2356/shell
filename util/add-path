@@ -1,0 +1,18 @@
+#! /usr/bin/env bash
+dest=$1
+path=$2
+
+SCRIPT=`which $0`
+if [ -z `echo $SCRIPT | grep -e '^\/'` ] ; then
+  script_path=`pwd`/$SCRIPT
+else
+  script_path=$SCRIPT
+fi
+
+last_match=`sed -n -E '/export PATH=.+/=' "$dest" | sed -n -e 'h' -e '$ {g;p;}'`
+if [ "x${last_match}" = "x" ] ; then
+  echo 'export PATH=$PATH:'"$path" >> "$dest"
+else
+  sed -i.bak -E "$last_match s|^.+$|&\nexport PATH=\$PATH:$path|" "$dest"
+fi
+
