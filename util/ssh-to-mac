@@ -1,0 +1,16 @@
+#! /usr/bin/env sh
+
+if [ $# -ge 1 ] ; then
+  user=$1
+else
+  user='wansong'
+fi
+if [ $# -ge 2 ] ; then
+  mac=$2
+else
+  mac='3c:46:d8:4e:e8:10'
+fi
+DESKTOP_IP=`arp -a | grep "${mac}" | sed -nE 's/^.*\((.+)\).*$/\1/p'`
+
+ssh "${user}@${DESKTOP_IP}"
+
