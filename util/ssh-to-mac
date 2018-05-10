@@ -1,5 +1,20 @@
 #! /usr/bin/env sh
 
+if [ "x`uname -o | grep -i 'darwin'`" != "x" ] ; then
+  esed="sed -E"
+else
+  esed="sed -r"
+fi
+
+network=`ifconfig | grep -E '[bB](road)?cast' | $esed 's/^.+b(road)?cast[[:space:]]*:?[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+).*$/\2/i'`
+for n in $network ; do
+  if [ $n = '0.0.0.0' ] ; then
+    continue
+  fi
+  ping "$network" -c 1 >/dev/null
+done
+
+
 if [ $# -ge 1 ] ; then
   user=$1
 else
@@ -10,7 +25,14 @@ if [ $# -ge 2 ] ; then
 else
   mac='3c:46:d8:4e:e8:10'
 fi
-DESKTOP_IP=`arp -a | grep "${mac}" | sed -nE 's/^.*\((.+)\).*$/\1/p'`
 
-ssh "${user}@${DESKTOP_IP}"
+
+DEST_IP=`arp -a | grep "${mac}" | sed -nE 's/^.*\((.+)\).*$/\1/p'`
+
+if [ -z $DEST_IP ] ; then
+  echo "no machine found for mac addr: $mac"
+  exit 255
+fi 
+
+ssh "${user}@${DEST_IP}"
 
