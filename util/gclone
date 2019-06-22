@@ -1,0 +1,36 @@
+#! /usr/bin/env bash
+# Assumption: no network connect issue; no authrization issue.
+
+if [ $# -lt 1 ] ; then
+  echo "gclone <repo_user/repo_name> [cache_server = git@vm23.cluster.home]"
+  exit 1
+fi
+
+repo_user_name=(`echo $1 | tr '/' ' '`)
+repo_user=${repo_user_name[0]}
+repo_name=${repo_user_name[1]}
+
+cache_server=${2:-git@vm23.cluster.home}
+full_url_local="${cache_server}:${repo_name}"
+full_url_remote="https://github.com/${repo_user}/${repo_name}"
+
+function doit() {
+  if git clone ${full_url_local} ; then
+    cd "${repo_name}"
+    git remote rename origin cache
+    git remote add origin "${full_url_remote}"
+    exit 0
+  fi
+}
+
+doit
+
+if ssh "${cache_server}" "git clone --bare ${full_url_remote}" ; then
+  doit
+fi
+
+rc=${?:-0}
+if [ $rc -ne 0 ] ; then
+  echo "Failed to clone from github: ${rc}"
+  exit $rc
+fi
