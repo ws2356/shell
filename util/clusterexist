@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 2 ] ; then
+  echo "$0 <file> <accout>..."
+  exit -1
+fi
+
+file=$1
+shift
+for acc in "$@" ; do
+  if ! ssh "$acc" "test -e $file" 2>&1 >/dev/null ; then
+    echo "$acc"
+    exit 1
+  fi
+done
+exit 0
+
