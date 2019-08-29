@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 2 ] ; then
+  echo "$0 <file> <accout>..."
+  exit -1
+fi
+if ! ensure_exist "$@" >/dev/null ; then
+  echo "Nothing to rm"
+  exit 1
+fi
+
+file=$1
+shift
+for acc in "$@" ; do
+  ssh "$acc" "rm $file || true"
+done

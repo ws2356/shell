@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 3 ] ; then
+  echo "$0 <src> <dest> <accout>..."
+  exit -1
+fi
+src=$1
+dest=$2
+shift ; shift
+
+which_acc=$(ensure_noent "$dest" "$@")
+if [ -n "$which_acc" ] ; then
+  echo "File(${dest}) exists on account(${which_acc})"
+  exit 1
+fi
+
+for acc in "$@" ; do
+  scp "$src" "${acc}:${dest}"
+done
+

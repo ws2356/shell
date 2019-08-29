@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# TODO: wansong, refactor using python, supporting more cmd
+repo=$1
+priv=${2:-true}
+
+function show_help() {
+  msg=${1:-Unknown Error}
+  code=${2:-255}
+  echo "$msg"
+  exit $code
+}
+
+function help_args() {
+  show_help "<repo> [true|false]"
+}
+
+if [[ -z "$repo" ]] ; then
+  help_args
+fi
+
+if [[ "$priv" != "true" && "$priv" != "false" ]] ; then
+  help_args
+fi
+
+curl -s -H "Authorization: token ${PAT}" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d '{"name":"'"${repo}"'","private":'$priv'}' \
+  https://api.github.com/user/repos | jq -r '.clone_url'
