@@ -10,6 +10,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 ##  iTerm2
 brew cask install iterm2
 brew cask install google-chrome
+brew cask install dropbox
 ## Bash
 brew install bash
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
@@ -46,6 +47,8 @@ bundle config mirror.http://rubygems.org https://gems.ruby-china.com
 gem install cocoapods
 gem install fir-cli
 
+# react-native
+brew install watchman
 
 # android
 # 可以使用brew安装java sdk
