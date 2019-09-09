@@ -9,6 +9,8 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 ## Xcode: Mac Store
 ##  iTerm2
 brew cask install iterm2
+brew cask install google-chrome
+brew cask install dropbox
 ## Bash
 brew install bash
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
