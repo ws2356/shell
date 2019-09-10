@@ -51,6 +51,13 @@ gem install fir-cli
 # react-native
 brew install watchman
 
+# iOS 环境
+if brew info >/dev/null 2>&1 ; then
+  brew upgrade carthage
+else
+  brew install carthage
+fi
+
 # android
 # 可以使用brew安装java sdk
 brew tap AdoptOpenJDK/openjdk
