@@ -35,6 +35,7 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 nvm install --lts
 npm i -g yarn
 npm i -g npx
+npm i -g typescript
 
 # ruby环境
 git clone https://github.com/andorchen/rbenv-china-mirror.git ~/.rbenv/plugins/rbenv-china-mirror || true
