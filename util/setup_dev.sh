@@ -52,7 +52,7 @@ gem install fir-cli
 brew install watchman
 
 # iOS 环境
-if brew info >/dev/null 2>&1 ; then
+if brew info carthage >/dev/null 2>&1 ; then
   brew upgrade carthage
 else
   brew install carthage
