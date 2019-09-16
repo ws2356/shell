@@ -43,5 +43,11 @@ EOFPLIST
 
 chmod 644 "$plist_file"
 
-touch "$error_file"
-touch "$log_file"
+sudo touch "$error_file"
+sudo chown "$(id -nu):$(id -ng)" $_
+sudo touch "$log_file"
+sudo chown "$(id -nu):$(id -ng)" $_
+
+if ! launchctl load "$plist_file" ; then
+  echo "Failed to load plist_file: $plist_file"
+fi
