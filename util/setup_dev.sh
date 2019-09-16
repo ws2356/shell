@@ -36,6 +36,7 @@ nvm install --lts
 npm i -g yarn
 npm i -g npx
 npm i -g typescript
+npm i -g trymodule
 
 # ruby环境
 git clone https://github.com/andorchen/rbenv-china-mirror.git ~/.rbenv/plugins/rbenv-china-mirror || true
