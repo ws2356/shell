@@ -11,6 +11,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew cask install iterm2
 brew cask install google-chrome
 brew cask install dropbox
+brew cask install charles
 ## Bash
 brew install bash
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
