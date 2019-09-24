@@ -62,6 +62,7 @@ if brew info carthage >/dev/null 2>&1 ; then
 else
   brew install carthage
 fi
+brew install ios-webkit-debug-proxy
 
 # android
 # 可以使用brew安装java sdk
