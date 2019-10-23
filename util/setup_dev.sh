@@ -103,4 +103,22 @@ sdkmanager --install "build-tools;26.0.3" platform-tools
 . ~/.bash_profile
 
 brew install --HEAD universal-ctags/universal-ctags/universal-ctags
+
+# python开发环境
+vpy3() {
+  local python_exe=python3
+  if [ ! -d "$HOME/.virtualenv" ] ;then
+    mkdir "$HOME/.virtualenv"
+  fi
+  if [ ! -d "$HOME/.virtualenv/$python_exe" ] ;then
+    virtualenv -p $python_exe "$HOME/.virtualenv/$python_exe"
+  fi
+  source "$HOME/.virtualenv/$python_exe/bin/activate"
+}
+pip install virtualenv
+vpy3
+# twine可以用来发布python package到pypi
+pip install twine
+deactivate
+
 } >>setup_dev.logs

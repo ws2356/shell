@@ -6,7 +6,7 @@ goto_dir_of() {
 
   if [ $# -lt 1 ] ; then
     echo "Usage: $0 <file>"
-    exit 1
+    return 1
   fi
   file=$1
 
