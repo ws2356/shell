@@ -13,6 +13,7 @@ mount_point=$(xmlstarlet sel -T -t \
   -c '//key[text()="mount-point"]/following-sibling::*[1]' \
   <(sudo hdiutil attach "$pkg" -plist))
 
+exit 0
 # install *.app
 sudo cp -r "$mount_point"/*.app /Applications || true
 
