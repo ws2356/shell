@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -ex
+# 自己先保证brew的本地仓库足够新，然后使用下面的环境变量加快安装速度
 export HOMEBREW_NO_AUTO_UPDATE=1
+
  # TODO: test existence, only install if not exist
 {
 # 加了一些冗余的source .bash_profile的步骤，希望不会造成负面影响
@@ -117,8 +119,13 @@ vpy3() {
 }
 pip install virtualenv
 vpy3
-# twine可以用来发布python package到pypi
-pip install twine
+pip install -r <(
+echo 'setuptools'
+echo '# twine可以用来发布python package到pypi'
+echo 'twine'
+echo '# 最新版本pylint的和py3.6或一些第三方库不兼容'
+echo 'pylint == 1.6.0'
+)
 deactivate
 
 } >>setup_dev.logs
