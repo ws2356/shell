@@ -31,6 +31,11 @@ brew install bash-completion && echo "[ -f /usr/local/etc/bash_completion ] && .
 brew cask install shadowsocksx-ng-r
 . ~/.bash_profile
 
+brew cask install docker
+docker run -d -p:8100:8080 --name plantuml --restart always plantuml/plantuml-server:jetty
+# 其他可选镜像
+# minimum2scp/squid
+
 # node 环境
 ## nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
