@@ -24,6 +24,7 @@ brew install ripgrep
 brew install fzf
 brew install postman
 brew install psequel
+brew install travis
 # failed!!!
 brew install bash-completion && echo "[ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion" >> ~/.bash_profile
 # TODO: check brew installed node/npm version, if exists and is old, update to lts, do that manually
@@ -59,6 +60,7 @@ gem install bundler
 bundle config mirror.http://rubygems.org https://gems.ruby-china.com
 gem install cocoapods
 gem install fir-cli
+gem install xcpretty
 
 # react-native
 brew install watchman
