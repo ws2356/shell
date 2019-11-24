@@ -56,6 +56,7 @@ brew install rbenv ruby-build
 rbenv install 2.4.2
 . ~/.bash_profile
 rbenv global 2.4.2
+gem sources --add https://gems.ruby-china.com/ --remove https://rubygems.org/
 gem install bundler
 bundle config mirror.http://rubygems.org https://gems.ruby-china.com
 gem install cocoapods
@@ -72,6 +73,10 @@ else
   brew install carthage
 fi
 brew install ios-webkit-debug-proxy
+# grubbox主题
+# https://github.com/morhetz/gruvbox-contrib/tree/master/xcode
+# xvim
+git clone 'https://github.com/XVimProject/XVim2' && cd XVim2 && make
 
 # android
 # 可以使用brew安装java sdk
