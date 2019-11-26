@@ -1,0 +1,12 @@
+#!/bin/bash
+{
+  for ff in `ls *.mobileprovision` ; do
+    echo "file: $ff"
+    security cms -D -i "$ff"
+    echo
+    echo
+    echo
+    echo
+    echo
+  done
+} | vim -
