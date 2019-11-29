@@ -8,8 +8,14 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # 加了一些冗余的source .bash_profile的步骤，希望不会造成负面影响
 
 # 基本工具
+# brew
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install vim
+
 ## Xcode: Mac Store
 ##  iTerm2
+
+
 brew cask install iterm2
 brew cask install google-chrome
 brew cask install dropbox
