@@ -31,8 +31,9 @@ brew install fzf
 brew install postman
 brew install psequel
 brew install travis
-# failed!!!
-brew install bash-completion && echo "[ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion" >> ~/.bash_profile
+brew install bash-completion && \
+  echo '[[ -r /usr/local/etc/profile.d/bash_completion.sh ]] && . /usr/local/etc/profile.d/bash_completion.sh' \
+  >> ~/.bash_profile
 # TODO: check brew installed node/npm version, if exists and is old, update to lts, do that manually
 
 brew cask install shadowsocksx-ng-r
