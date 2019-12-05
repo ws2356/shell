@@ -91,7 +91,7 @@ brew tap AdoptOpenJDK/openjdk
 brew cask install adoptopenjdk8
 . ~/.bash_profile
 
-brew tap caskroom/cask && brew cask install android-sdk
+brew cask install android-sdk || exit 0
 
 # if you dont already have the following code in your bashrc file, uncomment them then
 #cat >>~/.bash_profile <<"EOF"
