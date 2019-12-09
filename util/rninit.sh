@@ -96,7 +96,9 @@ EOF
 
 create_src_codes() {
   test -d src || mkdir src
-  cat >'src/KSAppContext.h' <<'EOF'
+  test -d src/context || mkdir src/context
+  test -d src/controller || mkdir src/controller
+  cat >'src/context/KSAppContext.h' <<'EOF'
 #import <Foundation/Foundation.h>
 #import <React/RCTBridge.h>
 
@@ -115,7 +117,7 @@ NS_ASSUME_NONNULL_BEGIN
 NS_ASSUME_NONNULL_END
 EOF
 
-  cat >'src/KSAppContext.m' <<'EOF'
+  cat >'src/context/KSAppContext.m' <<'EOF'
 #import "KSAppContext.h"
 #import <React/RCTBundleURLProvider.h>
 
@@ -136,6 +138,10 @@ EOF
 
 - (void) setupWithLaunchOptions: (NSDictionary* )launchOptions {
   KSAppContext *ctx = [KSAppContext sharedInstance];
+  if (ctx.rctBridge) {
+    NSLog(@"不要多次执行：setupWithLaunchOptions");
+    return;
+  }
   ctx.rctBridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
 }
 
@@ -150,31 +156,31 @@ EOF
 @end
 EOF
 
-  cat >'src/BaseViewController.h' <<'EOF'
+  cat >'src/controller/KSBaseViewController.h' <<'EOF'
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface BaseViewController : UIViewController
+@interface KSBaseViewController : UIViewController
 
 @end
 
 NS_ASSUME_NONNULL_END
 EOF
 
-  cat >'src/BaseViewController.m' <<'EOF'
-#import "BaseViewController.h"
+  cat >'src/controller/KSBaseViewController.m' <<'EOF'
+#import "KSBaseViewController.h"
 
-@implementation BaseViewController
+@implementation KSBaseViewController
 @end
 EOF
 
   cat >'src/HomeViewController.h' <<'EOF'
-#import "BaseViewController.h"
+#import "KSBaseViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface HomeViewController : BaseViewController
+@interface HomeViewController : KSBaseViewController
 
 @end
 
@@ -207,11 +213,11 @@ EOF
 EOF
 
   cat >'src/DynamicViewController.h' <<'EOF'
-#import "BaseViewController.h"
+#import "KSBaseViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface DynamicViewController : BaseViewController
+@interface DynamicViewController : KSBaseViewController
 
 @end
 
@@ -246,17 +252,44 @@ EOF
 add_src_codes() {
   local project_name=$1
   local target_name=$2
-  local filename=$3
+  local dirname=$3
+  local filename=$4
   rb_code=$(
   cat <<EOF
 require 'xcodeproj'
 project_path = '${project_name}.xcodeproj'
 project = Xcodeproj::Project.open(project_path)
 target = project.native_targets.find { |t| t.name == '${target_name}' }
-src_group = project.groups.find { |g| g.name == 'src' } || project.new_group('src', 'src')
 target == nil && exit
-h_file = src_group.new_reference('${filename}.h')
-m_file = src_group.new_reference('${filename}.m')
+parts = '${dirname}'.split('/')
+dest_group = nil
+parent_group = project.main_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+parts.empty?() || (dest_group = parent_group.groups.find { |g| g.name == parts[0] }) || (dest_group = parent_group.new_group(parts[0], parts[0]))
+parts.empty?() || parts.shift()
+parent_group = dest_group
+h_file = dest_group.new_reference('${filename}.h')
+m_file = dest_group.new_reference('${filename}.m')
 target.add_file_references([h_file, m_file])
 project.save
 EOF
@@ -266,15 +299,15 @@ EOF
   ruby -e "$one_line"
 }
 
-set -ex
 (
 cd ios
 create_src_codes
 
 shopt -s nullglob
-for ff in src/*.h ; do
+for ff in $(find src -name '*.h') ; do
   mod=$(basename "$ff" .h)
-  add_src_codes "$project_name" "$project_name" "$mod"
+  dir=$(dirname "$ff")
+  add_src_codes "$project_name" "$project_name" "$dir" "$mod"
 done
 modify_app_delegate
 )
@@ -308,6 +341,8 @@ use_frameworks! \
 '"\ \ pod 'PromisesSwift'"'\
 '"\ \ pod 'UIImage+FBLAdditions', '~> 1.0'"'\
 '"\ \ pod 'SwiftLint'"'\
+'"\ \ pod 'SDWebImage'"'\
+'"\ \ pod 'Alamofire'"'\
 ' \
 Podfile && rm Podfile.bak
 bundle exec pod install
