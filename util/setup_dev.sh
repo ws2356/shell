@@ -87,12 +87,16 @@ brew install ios-webkit-debug-proxy
 git clone 'https://github.com/XVimProject/XVim2' && cd XVim2 && make
 
 # android
-# 可以使用brew安装java sdk
+brew cask install android-studio
+brew install ant
+brew install maven
+brew install gradle
 brew tap AdoptOpenJDK/openjdk
 brew cask install adoptopenjdk8
 . ~/.bash_profile
 
 brew cask install android-sdk || exit 0
+brew cask install android-ndk || exit 0
 
 # if you dont already have the following code in your bashrc file, uncomment them then
 #cat >>~/.bash_profile <<"EOF"
@@ -104,6 +108,7 @@ brew cask install android-sdk || exit 0
 #fi
 #
 #export ANDROID_SDK_ROOT="/usr/local/share/android-sdk"
+#export ANDROID_NDK_HOME="/usr/local/share/android-ndk"
 #if [ -d "${ANDROID_SDK_ROOT}" ] ; then
 #  export ANDROID_HOME="$ANDROID_SDK_ROOT"
 #  export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
@@ -117,10 +122,9 @@ brew cask install android-sdk || exit 0
 
 . ~/.bash_profile
 
-brew install gradle
+# 再安装其他package
+caffeinate sdkmanager "add-ons;addon-google_apis-google-24" "platforms;android-29" "system-images;android-29;google_apis;x86_64" "system-images;android-29;default;x86_64" "sources;android-29" "build-tools;29.0.2"
 
-# 除了上面的sdk-tool，再安装另外两种tool
-sdkmanager --install "build-tools;26.0.3" platform-tools
 
 . ~/.bash_profile
 
