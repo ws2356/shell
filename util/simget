@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -e
+
+POSITIONAL=()
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --os)
+      os=$2
+      shift ; shift
+      ;;
+      --model)
+      model=$2
+      shift ; shift
+      ;;
+      *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+
+os=${os:-13-2}
+model=${model:-iphone 11}
+# cast to lowercast
+model=${model,,}
+device_id=$(xcrun simctl list devices "$model" -j | jq -r \
+  '.devices["com.apple.CoreSimulator.SimRuntime.iOS-'"${os}"'"][] | select(.name | test( "^'"${model}"'$" ; "i" )) | .udid')
+# tail -f "${HOME}/Library/Logs/CoreSimulator/${device_id}/system.log"
+printf "%s" "$device_id"
