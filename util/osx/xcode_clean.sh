@@ -13,7 +13,7 @@ declare -a clean_list=( \
   )
 
 check_path() {
-  pref=~/Library/Developer/Xcode/
+  local pref=~/Library/Developer/Xcode/
   if ! echo "$1" | grep -E "^$pref" >/dev/null ; then
     return 1
   fi
@@ -21,7 +21,7 @@ check_path() {
 }
 
 for ff in "${clean_list[@]}" ; do
-  if [ -z "$ff" ] || [ ! -e "$ff" ] ; then
+  if [ ! -e "$ff" ] ; then
     continue
   fi
   if ! check_path "$ff" ; then

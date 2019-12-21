@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -e
+if [ $# -ge 1 ] ; then
+  p=$1
+else
+  p=$(cat)
+fi
+
+is_relative=
+if echo "$p" | grep -E '^/' >/dev/null ; then
+  is_relative=false
+else
+  is_relative=true
+fi
+
+IFS_=$IFS
+IFS='/'
+read -a components <<<"$p"
+IFS=$IFS_
+
+declare -a stack=()
+for c in "${components[@]}" ; do
+  if [ "$c" = '.' ] || [ -z "$c" ] ; then
+    continue
+  fi
+  len=${#stack[@]}
+  if [ "$c" = ".." ] && [ "$len" -gt 0 ] && [ "${stack[len - 1]}" != '..' ] ; then
+    stack=("${stack[@]:0:len-1}")
+    continue
+  fi
+  stack+=("$c")
+done
+
+IFS_=$IFS
+IFS='/'
+ret="${stack[*]}"
+IFS=$IFS_
+
+if $is_relative ; then
+  echo "./$ret"
+else
+  echo "/$ret"
+fi

@@ -1,3 +1,0 @@
-a string changed
-
-another string changed

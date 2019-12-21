@@ -1,6 +1,6 @@
 #!/bin/bash
 {
-  for ff in `ls *.mobileprovision` ; do
+  for ff in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision ; do
     echo "file: $ff"
     security cms -D -i "$ff"
     echo

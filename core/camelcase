@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -e
+if [ $# -ge 1 ] ; then
+  declare -a args
+  args=("$@")
+else
+  read -a args
+fi
+
+for str in "${args[@]}" ; do
+  IFS_=$IFS
+  IFS='-_'
+  read -a words <<<"$str"
+  IFS=$IFS_
+
+  ret=''
+  for wd in "${words[@]}" ; do
+    ret="${ret}${wd^?}"
+  done
+  echo $"ret"
+done
