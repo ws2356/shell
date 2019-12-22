@@ -10,9 +10,17 @@ if [ -z "$pref" ] ; then
   pref=.
 fi
 
-save_to=${pref}/history-archive-`date '+%Y-%m-%d'`.txt
+save_to=${pref}/history-archive-$(date '+%Y-%m-%d').txt
 
 echo "${save_to}"
 
-awk '{ $1 = "-"; $2 = ""; $3 = ""; print $0 }' | grep -vE '\s*-\s+(vim|history|which|tbnpm|cat|cd|cnpm|ls|pwd|echo|man|mv|node|rm|open|scp|ssh|help|mkdir|chmod|ping)' | grep -vE '\s*-\s+\w+=' | grep -vE '\s*-\s+git\s+(add|clean|clone|commit|remote|reset|checkout|push|pull|merge|rebase|fetch|ll|init|rm)' | grep -vE '\s*-\s+curl\s+http' | grep -vE '\s*-\s+npm (run|install|view)' |  grep -vE '^\s*-\s+(brew install.+)?$' | grep -vE '\s*-\s+\.'  | sort | uniq | awk '{ $1 = NR; print $0 }' >"$save_to"
-
+awk '{ $1 = ""; print $0 }' |\
+  grep -vE '\s*(vim|history|which|tbnpm|cat|cd|cnpm|ls|pwd|echo|man|mv|node|rm|open|scp|ssh|help|mkdir|chmod|ping)' |\
+  grep -vE '\s*\w+=' |\
+  grep -vE '\s*git\s+(add|clean|clone|commit|remote|reset|checkout|push|pull|merge|rebase|fetch|ll|init|rm)' |\grep -vE '\s*-\s+curl\s+http' |\
+  grep -vE '\s*npm (run|install|view)' |\
+  grep -vE '^\s*(brew install.+)?$' |\
+  grep -vE '\s*\.'  |\
+  sort |\
+  uniq \
+  >"$save_to"
