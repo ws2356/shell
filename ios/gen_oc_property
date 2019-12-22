@@ -1,9 +1,9 @@
-#! /bin/sh
+#!/usr/bin/env bash
 
 function help() {
   echo "Usage:"
   echo "    $0 <className> <categoryName> <propertyName> <propertyType> <storageAttribute> <dynamicStorageAttribute>"
-  exit -1
+  exit 1
 }
 
 function to_uppercase() {
@@ -11,9 +11,7 @@ function to_uppercase() {
 }
 
 function capitalize() {
-  input=$1
-  first=$(to_uppercase `echo $input | cut -c 1`)
-  echo "${first}`echo ${input} | cut -c 2-`"
+  echo "${1^?}"
 }
 
 if [ $# -lt 6 ] ; then
