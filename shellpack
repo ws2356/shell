@@ -19,19 +19,15 @@ pack_file() {
     file_delim="shellpack-${RANDOM}"
   done
   # 设置执行权限
-  local is_exe
-  if [ -x "$file" ] ; then
-    is_exe=true
-  else
-    is_exe=false
-  fi
+  local perm
+  perm=$(stat -f '%Lp' "$file")
   # mkdir
   echo "# Generate file: $file_relative"
   echo 'mkdir -p "'"$dir_relative"'"'
   echo 'cat >'"$file_relative"' <<"'"$file_delim"'"'
   cat "$file"
   echo $file_delim
-  echo ${is_exe}' && chmod +x ''"'"$file_relative"'"'
+  echo 'chmod '"$perm"' "'"$file_relative"'"'
   echo '#================================='
   echo
 }
