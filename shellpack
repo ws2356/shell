@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 declare -a trees
 trees=("$@")
@@ -12,23 +12,37 @@ pack_file() {
   local file_relative=$2
   local dir_relative
   dir_relative=$(dirname "$file_relative")
+  # 自定义EOF避免和文件内部的冲突
+  local file_delim
+  file_delim="shellpack-${RANDOM}"
+  while grep "$file_delim" "$file" >/dev/null ; do
+    file_delim="shellpack-${RANDOM}"
+  done
+  # 设置执行权限
+  local is_exe
+  if [ -x "$file" ] ; then
+    is_exe=true
+  else
+    is_exe=false
+  fi
   # mkdir
   echo "# Generate file: $file_relative"
   echo 'mkdir -p "'"$dir_relative"'"'
-  echo 'cat >'"$file_relative"' <<"EOF"'
+  echo 'cat >'"$file_relative"' <<"'"$file_delim"'"'
   cat "$file"
-  echo 'EOF'
+  echo $file_delim
+  echo ${is_exe}' && chmod +x ''"'"$file_relative"'"'
   echo '#================================='
   echo
 }
 
-re_source_filename='.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp|.+\.txt'
+re_source_filename='.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp|.+\.txt|.+\.sh'
 
 for tree in "${trees[@]}"; do
   full_tree_path=`(cd "${tree}" && pwd)`
   tree_name=$(basename "$tree")
   files=($(find -E "${full_tree_path%%/}" \
-    -type f -and \( -perm +111 -or -iregex '.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp' \) ))
+    -type f -and \( -perm +111 -or -iregex "$re_source_filename" \) ))
   for file in "${files[@]}"; do
     relative_file_path=${file#$full_tree_path}
     relative_file_path="${tree_name}$relative_file_path"
