@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 declare -a trees
 trees=("$@")
@@ -22,11 +22,13 @@ pack_file() {
   echo
 }
 
+re_source_filename='.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp|.+\.txt'
+
 for tree in "${trees[@]}"; do
   full_tree_path=`(cd "${tree}" && pwd)`
   tree_name=$(basename "$tree")
   files=($(find -E "${full_tree_path%%/}" \
-    -iregex '.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp' -type f))
+    -type f -and \( -perm +111 -or -iregex '.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp' \) ))
   for file in "${files[@]}"; do
     relative_file_path=${file#$full_tree_path}
     relative_file_path="${tree_name}$relative_file_path"
