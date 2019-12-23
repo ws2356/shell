@@ -2,35 +2,8 @@
 
 set -e
 
-trees=()
-replace_from=
-replace_to=
-while [ "$#" -gt 0 ] ; do
-  key="$1"
-  case $key in
-      --replace-from)
-      replace_from=$2
-      shift ; shift
-      ;;
-      --replace-to)
-      replace_to=$2
-      shift ; shift
-      ;;
-      *)
-      trees+=("$1")
-      shift
-      ;;
-  esac
-done
-
-if [ -z "$replace_from" ] && [ -z "$replace_to" ] ; then
-  replace_from=KK
-  replace_to=KK
-fi
-
-if [ -z "$replace_from" ] ; then
-  replace_from=$replace_to
-fi
+declare -a trees
+trees=("$@")
 
 pack_file() {
   # 文件路径
@@ -38,22 +11,14 @@ pack_file() {
   # 从tree文件夹开始的相对路径
   local file_relative=$2
   local dir_relative
-  local name
-  local content
-  name=$(basename "$file")
   dir_relative=$(dirname "$file_relative")
   # mkdir
   echo "# Generate file: $file_relative"
   echo 'mkdir -p "'"$dir_relative"'"'
-  # cat to file
-  new_file="${dir_relative}/${name/#$replace_from/$replace_to}"
-  echo '{'
-  echo '  sed -E '"s/${replace_from}/${replace_to}/g"' >'\"$new_file\"
-  echo '} <<"EOF"'
+  echo 'cat >'"$file_relative"' <<"EOF"'
   cat "$file"
   echo 'EOF'
   echo '#================================='
-  echo
   echo
 }
 
