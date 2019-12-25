@@ -17,5 +17,5 @@ for str in "${args[@]}" ; do
   for wd in "${words[@]}" ; do
     ret="${ret}${wd^?}"
   done
-  echo $"ret"
+  echo "$ret"
 done
