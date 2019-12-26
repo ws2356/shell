@@ -33,15 +33,34 @@ pack_file() {
   echo
 }
 
-re_source_filename='.+\.h|.+\.m|.+\.mm|.+\.c|.+\.cc|.+\.cpp|.+\.hpp|.+\.txt|.+\.sh'
-
 echo '#!/usr/bin/env bash'
+echo
 
+cat <<"EOF"
+is_install=false
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --install)
+      is_install=true
+      shift
+      ;;
+      --default)
+      shift
+      ;;
+      *)
+  esac
+done
+
+
+EOF
+
+re_source_filename_exclude='.+\.swp|\.tags|\.DS_Store|.+\.part'
 for tree in "${trees[@]}"; do
   full_tree_path=`(cd "${tree}" && pwd)`
   tree_name=$(basename "$tree")
   files=($(find -E "${full_tree_path%%/}" \
-    -type f -and \( -perm +111 -or -iregex "$re_source_filename" \) ))
+    -type f -and -not -iregex "$re_source_filename_exclude" ))
   for file in "${files[@]}"; do
     relative_file_path=${file#$full_tree_path}
     relative_file_path="${tree_name}$relative_file_path"
@@ -49,10 +68,46 @@ for tree in "${trees[@]}"; do
   done
 done
 
+cat <<"EOF"
+if $is_install ; then
+  exit
+fi
+EOF
+
 # 下面生成的代码的功能：在当前目录生成一个加载上面说的恢复目录的脚本shellpack_loader.sh
 # 并把. shellpack_loader.sh <trees>这样的一条语句插入用户的profile文件里
+# 导出tree列表给下面生成的代码使用
+export_tree_list_stmt='tree_list=('
+for tree in "${trees[@]}" ; do
+  export_tree_list_stmt+='"'$(basename "$tree")'"'
+  export_tree_list_stmt+=' '
+done
+export_tree_list_stmt+=')'
+echo "$export_tree_list_stmt"
+
+cat <<"EOF"
+declare -a tree_list2
+for item in "${tree_list[@]}" ; do
+  tree_list2+=("$(pwd)/$item")
+done
+IFS_=$IFS
+export IFS=$'\n'
+tree_list_str="${tree_list2[*]}"
+export IFS=$IFS_
+
+cat >shellpack_loader.sh <<EOFEOF
+declare -a _shellpack_tree_list
+IFS_=\$IFS
+export IFS=$'\n'
+_shellpack_tree_list=($tree_list_str)
+export IFS=\$IFS_
+EOFEOF
+
+EOF
+
 cat <<"EOFEOF"
-cat >"shellpack_loader.sh" <<"EOF"
+cat >>"shellpack_loader.sh" <<"EOF"
+
 _shellpack_load_functions=()
 _shellpack_load_sourced_scripts=()
 shellpack_load_summary() {
@@ -78,29 +133,17 @@ shellpack_load_summary() {
       eval "$func_name"'() { bash "'"${ff}"'" "$@" ; }'
     fi
   done
-} < <(find "$@" -type f)
+} < <(find "${_shellpack_tree_list[@]}" -type f)
 EOF
 EOFEOF
 
-# 导出tree列表给下面生成的代码使用
-export_tree_list_stmt='tree_list=('
-for tree in "${trees[@]}" ; do
-  export_tree_list_stmt+='"'$(basename "$tree")'"'
-  export_tree_list_stmt+=' '
-done
-export_tree_list_stmt+=')'
-echo "$export_tree_list_stmt"
-
 cat <<"EOF"
 cwd=$(pwd)
-abs_tree_list=()
-for tree in "${tree_list[@]}" ; do
-  abs_tree_list+=("\"${cwd}/${tree}\"")
-done
 shellpack_loader_installed_path=${cwd}/shellpack_loader.sh
-source_loader_line=". \"${shellpack_loader_installed_path}\" ${abs_tree_list[*]}"
+source_loader_line=". \"${shellpack_loader_installed_path}\""
 if grep -E '^\. "'"${shellpack_loader_installed_path}"'"' "${HOME}/.bashrc" >/dev/null 2>&1 ; then
-  sed -i.bak 's;^\(\. "'"${shellpack_loader_installed_path}"'"..*\);'"${source_loader_line};" "${HOME}/.bashrc"
+  sed -i.bak 's;^\. "'"${shellpack_loader_installed_path}"'".*$;'"${source_loader_line};" "${HOME}/.bashrc" \
+  && rm "${HOME}/.bashrc.bak"
 else
   echo "$source_loader_line" >>"${HOME}/.bashrc"
 fi
