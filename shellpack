@@ -59,6 +59,7 @@ shellpack_load_summary() {
   echo "===================================="
   echo "shellpack loaded functions:"
   echo "  ${_shellpack_load_functions[*]}"
+  echo "------------------------------------"
   echo "shellpack sourced scripts:"
   echo "  ${_shellpack_load_sourced_scripts[*]}"
   echo "===================================="
@@ -98,9 +99,9 @@ for tree in "${tree_list[@]}" ; do
 done
 shellpack_loader_installed_path=${cwd}/shellpack_loader.sh
 source_loader_line=". \"${shellpack_loader_installed_path}\" ${abs_tree_list[*]}"
-if grep -E '^\. "'"${shellpack_loader_installed_path}"'"' "${HOME}/.bash_profile" >/dev/null 2>&1 ; then
-  sed -i.bak 's;^\(\. "'"${shellpack_loader_installed_path}"'"..*\);'"${source_loader_line};" "${HOME}/.bash_profile"
+if grep -E '^\. "'"${shellpack_loader_installed_path}"'"' "${HOME}/.bashrc" >/dev/null 2>&1 ; then
+  sed -i.bak 's;^\(\. "'"${shellpack_loader_installed_path}"'"..*\);'"${source_loader_line};" "${HOME}/.bashrc"
 else
-  echo "$source_loader_line" >>"${HOME}/.bash_profile"
+  echo "$source_loader_line" >>"${HOME}/.bashrc"
 fi
 EOF
