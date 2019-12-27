@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
 set -e
 
+device_id=$(simget)
+if [ -z "$device_id" ] ; then
+  exit 1
+fi
+
 pass_args=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
-      --device-id)
-      device_id="$2"
-      shift ; shift
-      ;;
       *)
       pass_args+=("$1")
       shift
       ;;
   esac
 done
-
-if [ -z "$device_id" ] ; then
-  exit 1
-fi
 
 xcrun simctl spawn "$device_id" log stream "${pass_args[@]}"

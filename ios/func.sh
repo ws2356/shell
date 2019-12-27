@@ -18,7 +18,7 @@ simget() {
     return 1
   fi
 
-  echo "选择系统版本："
+  echo "选择系统版本：" 1>&2
   local selected_os_version=
   select item in "${runtime_versions[@]}" ; do
     if [ -z "$item" ] ; then
@@ -44,7 +44,7 @@ simget() {
     device_names+=("$device_name")
   done
 
-  echo "选择机型："
+  echo "选择机型：" 1>&2
   local selected_device_name
   local selected_device_id
   select item in "${device_names[@]}" ; do

@@ -69,9 +69,13 @@ for tree in "${trees[@]}"; do
 done
 
 cat <<"EOF"
+cwd=$(pwd)
+echo 'SHELLPACK_HOME="'"$cwd"'"' >shellpack.conf
+
 if $is_install ; then
   exit
 fi
+
 EOF
 
 # 下面生成的代码的功能：在当前目录生成一个加载上面说的恢复目录的脚本shellpack_loader.sh
@@ -106,6 +110,10 @@ EOFEOF
 EOF
 
 cat <<"EOFEOF"
+cwd=$(pwd)
+
+echo '. "'"${cwd}/shellpack.conf"'"' >>"shellpack_loader.sh"
+
 cat >>"shellpack_loader.sh" <<"EOF"
 
 _shellpack_load_functions=()
@@ -139,6 +147,7 @@ EOFEOF
 
 cat <<"EOF"
 cwd=$(pwd)
+
 shellpack_loader_installed_path=${cwd}/shellpack_loader.sh
 source_loader_line=". \"${shellpack_loader_installed_path}\""
 if grep -E '^\. "'"${shellpack_loader_installed_path}"'"' "${HOME}/.bashrc" >/dev/null 2>&1 ; then
