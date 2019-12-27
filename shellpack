@@ -138,7 +138,7 @@ shellpack_load_summary() {
     # 可执行脚本且名称没有被占用
     elif [ -x "$ff" ] && ! type "$func_name" >/dev/null 2>&1 ; then
       _shellpack_load_functions+=("$func_name")
-      eval "$func_name"'() { bash "'"${ff}"'" "$@" ; }'
+      eval "$func_name"'() { bash "'"${ff}"'" "$@" ; }'" ; export -f $func_name"
     fi
   done
 } < <(find "${_shellpack_tree_list[@]}" -type f)

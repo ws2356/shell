@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-device_id=$(simget)
-if [ -z "$device_id" ] ; then
-  exit 1
-fi
-
+predicate=
 pass_args=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
+      --predicate)
+      predicate="$2"
+      shift ; shift
+      ;;
       *)
       pass_args+=("$1")
       shift
@@ -17,4 +17,90 @@ while [ "$#" -gt 0 ] ; do
   esac
 done
 
-xcrun simctl spawn "$device_id" log stream "${pass_args[@]}"
+device_id=$(simget)
+if [ -z "$device_id" ] ; then
+  exit 1
+fi
+
+history_file=.simlog.hist
+select_predicate_from_history() {
+  load_history() {
+    if [ -r "$history_file" ] ; then
+      cat "$history_file"
+    fi
+  }
+
+  trim_entry() {
+    sed 's/^[[:space:]]\{1,\}//' | sed 's/^[[:space:]]\{1,\}$//' | sed '/^[[:space:]]*#/ d' | sed '/^$/ d'
+  }
+
+  edit_new_entry() {
+    local ttyname
+    ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
+    local tmp_file
+    tmp_file=$(mktemp)
+    >"$tmp_file" echo -e "#Example:\nprocessImagePath contains[c] \"GVideo\""
+    0<"$ttyname" 1>"$ttyname" vim -f "$tmp_file"
+    trim_entry <"$tmp_file"
+    rm "$tmp_file"
+  }
+
+  edit_entry='Or, edit new entry'
+
+  is_new_entry=false
+  loaded_history=$(load_history)
+  selected_entry=
+  if [ -n "$loaded_history" ] ; then
+    declare -a entries
+    {
+      while read -r -d '' line ; do
+        if [ -z "$line" ] ; then
+          continue
+        fi
+        entries+=("$line")
+      done
+    } <<<"$loaded_history"
+
+    if [ "${#entries[@]}" -gt 0 ] ; then
+      echo "Total number of history entries: ${#entries[@]}"$'\n'"Choose one:"
+      entries+=("$edit_entry")
+      select choice in "${entries[@]}" ; do
+        if [ -z "$choice" ] ; then
+          continue
+        fi
+        selected_index=$(echo "$REPLY" | sed 's/[[:space:]]//g')
+        choice="${entries[selected_index-1]}"
+        if [ "$choice" = "$edit_entry" ] ; then
+          selected_entry=$(edit_new_entry)
+          is_new_entry=true
+        else
+          selected_entry="$choice"
+        fi
+        break
+      done
+    else
+      selected_entry=$(edit_new_entry)
+      is_new_entry=true
+    fi
+  fi
+  if [ -z "$loaded_history" ] ; then
+    selected_entry=$(edit_new_entry)
+    is_new_entry=true
+  fi
+
+  echo -e "Selected_entry:\n${selected_entry}"
+
+  if $is_new_entry ; then
+    echo "${selected_entry}" >>"$history_file"
+  fi
+}
+
+if [ -z "$predicate" ] ; then
+  select_predicate_from_history
+fi
+
+if [ -z "$predicate" ] ; then
+  predicate=true
+fi
+
+xcrun simctl spawn "$device_id" log stream --color always --predicate "$predicate" "${pass_args[@]}" | colorcat --verbose
