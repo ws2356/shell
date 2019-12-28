@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+set -e
+
+is_extended_re=false
+for arg in "$@" ; do
+  if [ "$arg" = '-E' ] ; then
+    is_extended_re=true
+  fi
+done
+# 参数直接relay给sed
+pass_args=("$@")
+
+# 优先使用gsed
+used_sed() {
+  if type gsed >/dev/null 2>&1 ; then
+    gsed "$@"
+  else
+    sed "$@"
+  fi
+}
+
+# 注意事项：
+# back reference从2开始，因为为了添加颜色在输入的re外面已经添加一层()
+
+history_file=.colorcat.hist
+# entry history文件格式
+# 1. entry
+# ============
+# color: red|green
+# re: xxx
+# re: xxx
+# color: blue
+# re: yyy
+# ------------
+# 2. entry之间的分隔符
+# 
+# ============
+
+declare -A color_map
+color_map[black]='[30m'
+color_map[red]='[31m'
+color_map[green]='[32m'
+color_map[yellow]='[33m'
+color_map[blue]='[34m'
+color_map[magenta]='[35m'
+color_map[cyan]='[36m'
+color_map[white]='[37m'
+color_reset_code='[0m'
+
+load_history() {
+  if [ -r "$history_file" ] ; then
+    cat "$history_file"
+  fi
+}
+
+trim_entry() {
+  sed 's/^[[:space:]]\{1,\}//' | sed 's/^[[:space:]]\{1,\}$//' | sed '/^$/ d'
+}
+
+# 这个函数需要在pipe环境下，通过终端和用户交互，获取后面操作需要的选项
+edit_new_entry() {
+  # 避免向stdout输出任何东西
+  1>&2 echo -e "Format: \n color: <red|green|blue|black|yellow|magenta|cyan|white>\n  re: ^re1\n  re: ^re2\$"
+  local ttyname
+  ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
+  <"$ttyname" trim_entry
+}
+
+edit_entry='Or, edit new entry'
+
+is_new_entry=false
+loaded_history=$(load_history)
+selected_entry=
+if [ -n "$loaded_history" ] ; then
+  declare -a entries
+  {
+    while read -r -d '' line ; do
+      if [ -z "$line" ] ; then
+        continue
+      fi
+      entries+=("$line")
+    done
+  } <<<"$loaded_history"
+
+  if [ "${#entries[@]}" -gt 0 ] ; then
+    1>&2 echo "Total number of history entries: ${#entries[@]}"$'\n'"Choose one:"
+    entries+=("$edit_entry")
+    ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
+    {
+      select choice in "${entries[@]}" ; do
+        if [ -z "$choice" ] ; then
+          continue
+        fi
+        if [ "$choice" = "$edit_entry" ] ; then
+          selected_entry=$(edit_new_entry)
+          is_new_entry=true
+        else
+          selected_entry="$choice"
+        fi
+        break
+      done
+    } 1>&2 <"${ttyname}"
+  else
+    selected_entry=$(edit_new_entry)
+    is_new_entry=true
+  fi
+fi
+
+if [ -z "$loaded_history" ] ; then
+  # 实验表明，命令替代的stdout输出不会影响当前进程的stdout
+  selected_entry=$(edit_new_entry)
+  is_new_entry=true
+fi
+
+1>&2 echo "Selected_entry: ${selected_entry}"
+
+if $is_new_entry ; then
+  echo "${selected_entry}" >>"$history_file"
+fi
+
+colorcat_imp() {
+  local concated_re=
+  local color=
+  declare -a remain_part
+  {
+    while read -r line ; do
+      if [ "${#remain_part[@]}" -gt 0 ] ; then
+        remain_part+=("$line")
+        continue
+      fi
+
+      if [[ "$line" =~ ^color:[[:blank:]]*(.+) ]] ; then
+        if [ -z "$concated_re" ] ; then
+          color="${BASH_REMATCH[1]}"
+        else
+          remain_part+=("$line")
+        fi
+        continue
+      fi
+
+      if [[ "$line" =~ ^re:[[:blank:]]?(.+) ]] ; then
+        concated_re+="${BASH_REMATCH[1]}"
+      fi
+    done
+  } <<<"$1"
+
+  local color_code="${color_map[$color]}"
+  if [ -z "$color_code" ] ; then
+    1>&2 echo "Color not supported: $color"
+    exit 1
+  fi
+
+  local parenthis1
+  local parenthis2
+  parenthis1="$($is_extended_re && echo '(' || echo '\(')"
+  parenthis2="$($is_extended_re && echo ')' || echo '\)')"
+  local re="s/${parenthis1}${concated_re}${parenthis2}/${color_code}\1${color_reset_code}/g"
+  if [ "${#remain_part[@]}" -gt 0 ] ; then
+    IFS_=$IFS
+    export IFS=$'\n'
+    remain_part_str="${remain_part[*]}"
+    export IFS=$IFS_
+    used_sed "${pass_args[@]}" "$re" | colorcat_imp "$remain_part_str"
+  else
+    used_sed "${pass_args[@]}" "$re"
+  fi
+}
+
+colorcat_imp "$selected_entry"

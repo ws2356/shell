@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+sed 's/[^[:digit:]]/2/'
+
+ps -p "$$" -o tty | sed '1d'
