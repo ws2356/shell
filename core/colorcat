@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 set -e
 
-is_extended_re=false
-for arg in "$@" ; do
-  if [ "$arg" = '-E' ] ; then
-    is_extended_re=true
-  fi
+is_verbose=false
+pass_args=()
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --verbose)
+      is_verbose=true
+      shift
+      ;;
+      *)
+      pass_args+=("$key")
+      shift
+      ;;
+  esac
 done
-# 参数直接relay给sed
-pass_args=("$@")
+# pass_args 参数直接relay给cat
 
 # 优先使用gsed
 used_sed() {
@@ -53,17 +61,26 @@ load_history() {
   fi
 }
 
+# 删除行首、行末空白符
+# 删除空行
 trim_entry() {
-  sed 's/^[[:space:]]\{1,\}//' | sed 's/^[[:space:]]\{1,\}$//' | sed '/^$/ d'
+  sed 's/^[[:space:]]\{1,\}//' | sed 's/^[[:space:]]\{1,\}$//' | sed '/^[[:space:]]*#/ d' | sed '/^$/ d'
 }
 
 # 这个函数需要在pipe环境下，通过终端和用户交互，获取后面操作需要的选项
 edit_new_entry() {
-  # 避免向stdout输出任何东西
-  1>&2 echo -e "Format: \n color: <red|green|blue|black|yellow|magenta|cyan|white>\n  re: ^re1\n  re: ^re2\$"
+  local tmp_file
+  tmp_file=$(mktemp)
+  >"$tmp_file" echo -e "#Format:\n#color: <red|green|blue|black|yellow|magenta|cyan|white>\n#re: ^re1\n#re: ^re2\$"
+
   local ttyname
   ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
-  <"$ttyname" trim_entry
+  # 下面一行为什么也能工作（没重定向stdin）？
+  # 说明vim始终把控制终端作为stdin，而不是盲目使用继承自父进程的stdin？
+  # >"$ttyname" vim -f "$tmp_file"
+  0<"$ttyname" 1>"$ttyname" vim -f "$tmp_file"
+  <"$tmp_file" trim_entry
+  rm "$tmp_file"
 }
 
 edit_entry='Or, edit new entry'
@@ -86,11 +103,18 @@ if [ -n "$loaded_history" ] ; then
     1>&2 echo "Total number of history entries: ${#entries[@]}"$'\n'"Choose one:"
     entries+=("$edit_entry")
     ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
+    declare -a displayed_entries=()
+    for item in "${entries[@]}" ; do
+      displayed_item=$(printf '%s' "$item" | sed -e ':a' -e '$!N;s/\n/\//;ta')
+      displayed_entries+=("$displayed_item")
+    done
     {
-      select choice in "${entries[@]}" ; do
+      select choice in "${displayed_entries[@]}" ; do
         if [ -z "$choice" ] ; then
           continue
         fi
+        selected_index=$(echo "$REPLY" | sed 's/[[:space:]]//g')
+        choice="${entries[selected_index-1]}"
         if [ "$choice" = "$edit_entry" ] ; then
           selected_entry=$(edit_new_entry)
           is_new_entry=true
@@ -107,63 +131,77 @@ if [ -n "$loaded_history" ] ; then
 fi
 
 if [ -z "$loaded_history" ] ; then
-  # 实验表明，命令替代的stdout输出不会影响当前进程的stdout
   selected_entry=$(edit_new_entry)
   is_new_entry=true
 fi
 
-1>&2 echo "Selected_entry: ${selected_entry}"
+1>&2 echo -e "Selected_entry:\n${selected_entry}"
 
 if $is_new_entry ; then
   echo "${selected_entry}" >>"$history_file"
 fi
 
 colorcat_imp() {
-  local concated_re=
-  local color=
-  declare -a remain_part
+  local concated_cmd_bre=
+  local concated_cmd_re=
+  local current_color=
+  local re_type=
+  local re_expr=
   {
     while read -r line ; do
-      if [ "${#remain_part[@]}" -gt 0 ] ; then
-        remain_part+=("$line")
+      if [[ "$line" =~ ^color:[[:blank:]]*([^[:space:]]+) ]] ; then
+        current_color="${BASH_REMATCH[1]}"
         continue
       fi
 
-      if [[ "$line" =~ ^color:[[:blank:]]*(.+) ]] ; then
-        if [ -z "$concated_re" ] ; then
-          color="${BASH_REMATCH[1]}"
+      local color_code="${color_map[$current_color]}"
+      if [ -z "$color_code" ] ; then
+        1>&2 echo "Color not supported: $current_color, using white instead."
+        color_code="${color_map[white]}"
+      fi
+
+      if [[ "$line" =~ ^(re|bre):[[:blank:]]?(.+) ]] ; then
+        re_type="${BASH_REMATCH[1]}"
+        re_expr="${BASH_REMATCH[2]}"
+        local parenthesis1
+        local parenthesis2
+        parenthesis1="$([ "$re_type" = "re" ] && echo '(' || echo '\(')"
+        parenthesis2="$([ "$re_type" = "re" ] && echo ')' || echo '\)')"
+        local cmd="s/${parenthesis1}${re_expr}${parenthesis2}/${color_code}\1${color_reset_code}/g"
+        if [ "$re_type" = "re" ] ; then
+          if [ -n "$concated_cmd_re" ] ; then
+            concated_cmd_re+=";${cmd}"
+          else
+            concated_cmd_re="${cmd}"
+          fi
+        elif [ "$re_type" = "bre" ] ; then
+          if [ -n "$concated_cmd_bre" ] ; then
+            concated_cmd_bre+=";${cmd}"
+          else
+            concated_cmd_bre="${cmd}"
+          fi
         else
-          remain_part+=("$line")
+          1>&2 echo "Invalid re type, ignoring: $line"
+          continue
         fi
-        continue
-      fi
-
-      if [[ "$line" =~ ^re:[[:blank:]]?(.+) ]] ; then
-        concated_re+="${BASH_REMATCH[1]}"
       fi
     done
   } <<<"$1"
 
-  local color_code="${color_map[$color]}"
-  if [ -z "$color_code" ] ; then
-    1>&2 echo "Color not supported: $color"
-    exit 1
+  if [ $is_verbose ] ; then
+    1>&2 [ -n "$concated_cmd_re" ] && echo "real re: $concated_cmd_re"
+    1>&2 [ -n "$concated_cmd_bre" ] && echo "real bre: $concated_cmd_bre"
   fi
 
-  local parenthis1
-  local parenthis2
-  parenthis1="$($is_extended_re && echo '(' || echo '\(')"
-  parenthis2="$($is_extended_re && echo ')' || echo '\)')"
-  local re="s/${parenthis1}${concated_re}${parenthis2}/${color_code}\1${color_reset_code}/g"
-  if [ "${#remain_part[@]}" -gt 0 ] ; then
-    IFS_=$IFS
-    export IFS=$'\n'
-    remain_part_str="${remain_part[*]}"
-    export IFS=$IFS_
-    used_sed "${pass_args[@]}" "$re" | colorcat_imp "$remain_part_str"
+  if [ -n "$concated_cmd_re" ] && [ -n "$concated_cmd_bre" ] ; then
+    used_sed "$concated_cmd_bre" | used_sed -E "$concated_cmd_re"
+  elif [ -n "$concated_cmd_re" ] ; then
+    used_sed -E "$concated_cmd_re"
+  elif [ -n "$concated_cmd_bre" ] ; then
+    used_sed "$concated_cmd_bre"
   else
-    used_sed "${pass_args[@]}" "$re"
+    cat
   fi
 }
 
-colorcat_imp "$selected_entry"
+cat "${pass_args[@]}" | colorcat_imp "$selected_entry"
