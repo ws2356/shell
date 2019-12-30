@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+is_edit=false
 predicate=
 pass_args=()
 while [ "$#" -gt 0 ] ; do
@@ -10,6 +11,10 @@ while [ "$#" -gt 0 ] ; do
       predicate="$2"
       shift ; shift
       ;;
+      --edit)
+      is_edit=true
+      shift
+      ;;
       *)
       pass_args+=("$1")
       shift
@@ -17,14 +22,19 @@ while [ "$#" -gt 0 ] ; do
   esac
 done
 
-device_id=$(simget)
-if [ -z "$device_id" ] ; then
-  exit 1
-fi
-
 history_file=.simlog.hist
 if [ -n "$SHELLPACK_HOME" ] ; then
   history_file="${SHELLPACK_HOME}/$history_file"
+fi
+
+if $is_edit ; then
+  vim -f "$history_file"
+  exit
+fi
+
+device_id=$(simget)
+if [ -z "$device_id" ] ; then
+  exit 1
 fi
 
 select_predicate_from_history() {

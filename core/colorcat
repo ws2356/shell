@@ -2,6 +2,7 @@
 set -e
 
 is_verbose=false
+is_edit=false
 pass_args=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
@@ -10,12 +11,17 @@ while [ "$#" -gt 0 ] ; do
       is_verbose=true
       shift
       ;;
+      --edit)
+      is_edit=true
+      shift
+      ;;
       *)
       pass_args+=("$key")
       shift
       ;;
   esac
 done
+
 # pass_args 参数直接relay给cat
 
 # 优先使用gsed
@@ -34,6 +40,12 @@ history_file=.colorcat.hist
 if [ -n "$SHELLPACK_HOME" ] ; then
   history_file="${SHELLPACK_HOME}/$history_file"
 fi
+
+if $is_edit ; then
+  vim -f "$history_file"
+  exit
+fi
+
 # entry history文件格式
 # 1. entry
 # ============
