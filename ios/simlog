@@ -2,6 +2,7 @@
 set -e
 
 is_edit=false
+is_edit_color=false
 predicate=
 pass_args=()
 while [ "$#" -gt 0 ] ; do
@@ -13,6 +14,10 @@ while [ "$#" -gt 0 ] ; do
       ;;
       --edit)
       is_edit=true
+      shift
+      ;;
+      --edit-color)
+      is_edit_color=true
       shift
       ;;
       *)
@@ -27,10 +32,18 @@ if [ -n "$SHELLPACK_HOME" ] ; then
   history_file="${SHELLPACK_HOME}/$history_file"
 fi
 
+coloccat_session_file="$(dirname "$history_file")/.simlog_colorcat.hist"
+
 if $is_edit ; then
   vim -f "$history_file"
   exit
 fi
+
+if $is_edit_color ; then
+  vim -f "$coloccat_session_file"
+  exit
+fi
+
 
 device_id=$(simget)
 if [ -z "$device_id" ] ; then
@@ -118,4 +131,4 @@ if [ -z "$predicate" ] ; then
   predicate='1!=2'
 fi
 
-xcrun simctl spawn "$device_id" log stream --color always --predicate "$predicate" "${pass_args[@]}" 2>&1 | colorcat --verbose
+xcrun simctl spawn "$device_id" log stream --color always --predicate "$predicate" "${pass_args[@]}" 2>&1 | colorcat --session-file "$coloccat_session_file"

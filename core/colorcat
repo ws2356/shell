@@ -3,6 +3,7 @@ set -e
 
 is_verbose=false
 is_edit=false
+session_file=
 pass_args=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
@@ -14,6 +15,10 @@ while [ "$#" -gt 0 ] ; do
       --edit)
       is_edit=true
       shift
+      ;;
+      -f|--session-file)
+      session_file="$2"
+      shift ; shift
       ;;
       *)
       pass_args+=("$key")
@@ -39,6 +44,10 @@ used_sed() {
 history_file=.colorcat.hist
 if [ -n "$SHELLPACK_HOME" ] ; then
   history_file="${SHELLPACK_HOME}/$history_file"
+fi
+
+if [ -n "$session_file" ] ; then
+  history_file="$session_file"
 fi
 
 if $is_edit ; then
@@ -105,8 +114,9 @@ is_new_entry=false
 is_no_color=false
 loaded_history=$(load_history)
 selected_entry=
+
+declare -a entries=()
 if [ -n "$loaded_history" ] ; then
-  declare -a entries
   {
     while read -r -d '' line ; do
       if [ -z "$line" ] ; then
@@ -115,46 +125,40 @@ if [ -n "$loaded_history" ] ; then
       entries+=("$line")
     done
   } <<<"$loaded_history"
-
-  if [ "${#entries[@]}" -gt 0 ] ; then
-    1>&2 echo "Total number of history entries: ${#entries[@]}"$'\n'"Choose one:"
-    entries+=("$edit_entry")
-    entries+=("$no_color")
-    ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
-    declare -a displayed_entries=()
-    for item in "${entries[@]}" ; do
-      displayed_item=$(printf '%s' "$item" | sed -e ':a' -e '$!N;s/\n/\//;ta')
-      displayed_entries+=("$displayed_item")
-    done
-    {
-      select choice in "${displayed_entries[@]}" ; do
-        if [ -z "$choice" ] ; then
-          continue
-        fi
-        selected_index=$(echo "$REPLY" | sed 's/[[:space:]]//g')
-        choice="${entries[selected_index-1]}"
-        if [ "$choice" = "$edit_entry" ] ; then
-          selected_entry=$(edit_new_entry)
-          is_new_entry=true
-        elif [ "$choice" = "$no_color" ] ; then
-          selected_entry=''
-          is_no_color=true
-        else
-          selected_entry="$choice"
-        fi
-        break
-      done
-    } 1>&2 <"${ttyname}"
-  else
-    selected_entry=$(edit_new_entry)
-    is_new_entry=true
-  fi
 fi
 
-if [ -z "$loaded_history" ] && ! $is_no_color ; then
-  selected_entry=$(edit_new_entry)
-  is_new_entry=true
+1>&2 echo "Total number of history entries: ${#entries[@]}"
+if [ "${#entries[@]}" -gt 0 ] ; then
+  1>&2 echo "Choose one:"
 fi
+
+entries+=("$edit_entry")
+entries+=("$no_color")
+ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
+declare -a displayed_entries=()
+for item in "${entries[@]}" ; do
+  displayed_item=$(printf '%s' "$item" | sed -e ':a' -e '$!N;s/\n/\//;ta')
+  displayed_entries+=("$displayed_item")
+done
+{
+  select choice in "${displayed_entries[@]}" ; do
+    if [ -z "$choice" ] ; then
+      continue
+    fi
+    selected_index=$(echo "$REPLY" | sed 's/[[:space:]]//g')
+    choice="${entries[selected_index-1]}"
+    if [ "$choice" = "$edit_entry" ] ; then
+      selected_entry=$(edit_new_entry)
+      is_new_entry=true
+    elif [ "$choice" = "$no_color" ] ; then
+      selected_entry=''
+      is_no_color=true
+    else
+      selected_entry="$choice"
+    fi
+    break
+  done
+} 1>&2 <"${ttyname}"
 
 if [ -n "$selected_entry" ] ; then
   1>&2 echo -e "Selected_entry:\n${selected_entry}"
