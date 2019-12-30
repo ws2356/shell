@@ -4,7 +4,7 @@ if ! declare -F simget >/dev/null ; then
   simget() {
     local runtimes
     # cast to lowercase
-    runtimes=$(xcrun simctl list -j | jq -r '.runtimes | .[] | (.version + "," + .identifier)')
+    IFS=$'\n' runtimes=$(xcrun simctl list -j | jq -r '.runtimes | .[] | (.name + "," + .identifier)')
     local -a runtime_versions
     local -A runtime_id_by_version
     local os_version
