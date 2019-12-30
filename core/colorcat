@@ -31,6 +31,9 @@ used_sed() {
 # back reference从2开始，因为为了添加颜色在输入的re外面已经添加一层()
 
 history_file=.colorcat.hist
+if [ -n "$SHELLPACK_HOME" ] ; then
+  history_file="${SHELLPACK_HOME}/$history_file"
+fi
 # entry history文件格式
 # 1. entry
 # ============
@@ -84,8 +87,10 @@ edit_new_entry() {
 }
 
 edit_entry='Or, edit new entry'
+no_color='Or, no extra color'
 
 is_new_entry=false
+is_no_color=false
 loaded_history=$(load_history)
 selected_entry=
 if [ -n "$loaded_history" ] ; then
@@ -102,6 +107,7 @@ if [ -n "$loaded_history" ] ; then
   if [ "${#entries[@]}" -gt 0 ] ; then
     1>&2 echo "Total number of history entries: ${#entries[@]}"$'\n'"Choose one:"
     entries+=("$edit_entry")
+    entries+=("$no_color")
     ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
     declare -a displayed_entries=()
     for item in "${entries[@]}" ; do
@@ -118,6 +124,9 @@ if [ -n "$loaded_history" ] ; then
         if [ "$choice" = "$edit_entry" ] ; then
           selected_entry=$(edit_new_entry)
           is_new_entry=true
+        elif [ "$choice" = "$no_color" ] ; then
+          selected_entry=''
+          is_no_color=true
         else
           selected_entry="$choice"
         fi
@@ -130,12 +139,14 @@ if [ -n "$loaded_history" ] ; then
   fi
 fi
 
-if [ -z "$loaded_history" ] ; then
+if [ -z "$loaded_history" ] && ! $is_no_color ; then
   selected_entry=$(edit_new_entry)
   is_new_entry=true
 fi
 
-1>&2 echo -e "Selected_entry:\n${selected_entry}"
+if [ -n "$selected_entry" ] ; then
+  1>&2 echo -e "Selected_entry:\n${selected_entry}"
+fi
 
 if $is_new_entry ; then
   echo "${selected_entry}" >>"$history_file"
@@ -204,4 +215,8 @@ colorcat_imp() {
   fi
 }
 
-cat "${pass_args[@]}" | colorcat_imp "$selected_entry"
+if $is_no_color ; then
+  cat
+else
+  cat "${pass_args[@]}" | colorcat_imp "$selected_entry"
+fi

@@ -23,6 +23,10 @@ if [ -z "$device_id" ] ; then
 fi
 
 history_file=.simlog.hist
+if [ -n "$SHELLPACK_HOME" ] ; then
+  history_file="${SHELLPACK_HOME}/$history_file"
+fi
+
 select_predicate_from_history() {
   load_history() {
     if [ -r "$history_file" ] ; then

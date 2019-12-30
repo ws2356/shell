@@ -70,7 +70,7 @@ done
 
 cat <<"EOF"
 cwd=$(pwd)
-echo 'SHELLPACK_HOME="'"$cwd"'"' >shellpack.conf
+echo 'export SHELLPACK_HOME="'"$cwd"'"' >shellpack.conf
 
 if $is_install ; then
   exit
