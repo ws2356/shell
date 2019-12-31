@@ -4,18 +4,17 @@ if [ $# -ge 1 ] ; then
   declare -a args
   args=("$@")
 else
-  read -a args
+  read -r -a args
 fi
 
+declare -a grand_ret=()
 for str in "${args[@]}" ; do
-  IFS_=$IFS
-  IFS='-_'
-  read -a words <<<"$str"
-  IFS=$IFS_
-
+  IFS='-_' read -r -a words <<<"$str"
   ret=''
   for wd in "${words[@]}" ; do
     ret="${ret}${wd^?}"
   done
-  echo "$ret"
+  grand_ret+=("$ret")
 done
+
+echo "${grand_ret[*]}"
