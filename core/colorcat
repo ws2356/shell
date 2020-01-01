@@ -1,33 +1,39 @@
 #!/usr/bin/env bash
 set -e
 
-is_verbose=false
-is_edit=false
-session_file=
-pass_args=()
+history_file=.colorcat.hist
+if [ -n "$SHELLPACK_HOME" ] ; then
+  history_file="${SHELLPACK_HOME}/$history_file"
+fi
+
+declare -a pass_args_cat=()
+declare -a pass_args_color=(\
+  '--name' 'colorcat session' \
+  '--session-file' "$history_file" \
+  '--example-entry' "#Format:\n#color: <red|green|blue|black|yellow|magenta|cyan|white>\n#re: ^re1\n#re: ^re2\$" \
+)
+
+selected_entry=
+is_cat_arg=true
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
-      --verbose)
-      is_verbose=true
-      shift
-      ;;
-      --edit)
-      is_edit=true
-      shift
-      ;;
-      -f|--session-file)
-      session_file="$2"
-      shift ; shift
-      ;;
+      --selected-entry)
+        selected_entry=$2 ; shift ; shift
+        ;;
+      --)
+        is_cat_arg=false ; shift
+        ;;
       *)
-      pass_args+=("$key")
-      shift
-      ;;
+        if $is_cat_arg ; then
+          pass_args_cat+=("$key")
+        else
+          pass_args_color+=("$key")
+        fi
+        shift
+        ;;
   esac
 done
-
-# pass_args 参数直接relay给cat
 
 declare -A color_map
 color_map[black]='[30m'
@@ -49,35 +55,16 @@ used_sed() {
   fi
 }
 
+if [ -z "$selected_entry" ] ; then
+  selected_entry=$(shellpack_lru_entry "${pass_args_color[@]}")
+  # shellpack_lru_entry返回2表示完成了编辑
+  if [ "$?" -eq 2 ] ; then
+    exit
+  fi
+fi
+
 # 注意事项：
 # back reference从2开始，因为为了添加颜色在输入的re外面已经添加一层()
-
-history_file=.colorcat.hist
-if [ -n "$SHELLPACK_HOME" ] ; then
-  history_file="${SHELLPACK_HOME}/$history_file"
-fi
-
-if [ -n "$session_file" ] ; then
-  history_file="$session_file"
-fi
-
-declare -a shellpack_lru_entry_args=( \
-  '--name' 'colorcat session' \
-  '--session-file' "$history_file" \
-  '--example-entry' "#Format:\n#color: <red|green|blue|black|yellow|magenta|cyan|white>\n#re: ^re1\n#re: ^re2\$" \
-)
-
-if $is_edit ; then
-  shellpack_lru_entry_args+=('--edit')
-fi
-if $is_verbose ; then
-  shellpack_lru_entry_args+=('--verbose')
-fi
-
-selected_entry=$(shellpack_lru_entry "${shellpack_lru_entry_args[@]}")
-if $is_edit ; then
-  exit
-fi
 
 # entry history文件格式
 # 1. entry
@@ -105,13 +92,13 @@ colorcat_imp() {
         continue
       fi
 
-      local color_code="${color_map[$current_color]}"
-      if [ -z "$color_code" ] ; then
-        1>&2 echo "Color not supported: $current_color, using white instead."
-        color_code="${color_map[white]}"
-      fi
-
       if [[ "$line" =~ ^(re|bre):[[:blank:]]?(.+) ]] ; then
+        local color_code="${color_map[$current_color]}"
+        if [ -z "$color_code" ] ; then
+          1>&2 echo "Color not supported: $current_color, using white instead."
+          color_code="${color_map[white]}"
+        fi
+
         re_type="${BASH_REMATCH[1]}"
         re_expr="${BASH_REMATCH[2]}"
         local parenthesis1
@@ -139,24 +126,22 @@ colorcat_imp() {
     done
   } <<<"$1"
 
-  if [ $is_verbose ] ; then
-    1>&2 [ -n "$concated_cmd_re" ] && echo "real re: $concated_cmd_re"
-    1>&2 [ -n "$concated_cmd_bre" ] && echo "real bre: $concated_cmd_bre"
-  fi
+  1>&2 [ -n "$concated_cmd_re" ] && echo "real re: $concated_cmd_re"
+  1>&2 [ -n "$concated_cmd_bre" ] && echo "real bre: $concated_cmd_bre"
 
   if [ -n "$concated_cmd_re" ] && [ -n "$concated_cmd_bre" ] ; then
-    cat "${pass_args[@]}" | used_sed "$concated_cmd_bre" | used_sed -E "$concated_cmd_re"
+    cat "${pass_args_cat[@]}" | used_sed "$concated_cmd_bre" | used_sed -E "$concated_cmd_re"
   elif [ -n "$concated_cmd_re" ] ; then
-    cat "${pass_args[@]}" | used_sed -E "$concated_cmd_re"
+    cat "${pass_args_cat[@]}" | used_sed -E "$concated_cmd_re"
   elif [ -n "$concated_cmd_bre" ] ; then
-    cat "${pass_args[@]}" | used_sed "$concated_cmd_bre"
+    cat "${pass_args_cat[@]}" | used_sed "$concated_cmd_bre"
   else
-    cat "${pass_args[@]}"
+    cat "${pass_args_cat[@]}"
   fi
 }
 
 if [[ "$selected_entry" =~ ^[[:space:]]*$ ]] ; then
-  cat "${pass_args[@]}"
+  cat "${pass_args_cat[@]}"
 else
   colorcat_imp "$selected_entry"
 fi

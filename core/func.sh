@@ -74,7 +74,7 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
 
     if $is_edit ; then
       0<"$ttyname" 1>"$ttyname" vim -f "$session_file"
-      return 0
+      return 2
     fi
 
     # session file format

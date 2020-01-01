@@ -1,134 +1,76 @@
 #!/usr/bin/env bash
 set -e
 
-is_edit=false
-is_edit_color=false
-predicate=
-pass_args=()
-while [ "$#" -gt 0 ] ; do
-  key="$1"
-  case $key in
-      --predicate)
-      predicate="$2"
-      shift ; shift
-      ;;
-      --edit)
-      is_edit=true
-      shift
-      ;;
-      --edit-color)
-      is_edit_color=true
-      shift
-      ;;
-      *)
-      pass_args+=("$1")
-      shift
-      ;;
-  esac
-done
-
 history_file=.simlog.hist
 if [ -n "$SHELLPACK_HOME" ] ; then
   history_file="${SHELLPACK_HOME}/$history_file"
 fi
 
-coloccat_session_file="$(dirname "$history_file")/.simlog_colorcat.hist"
+declare -a pass_args_log=()
+# colorcat ignores any entry line that does not match 'color: xxx' and 're|bre: xxx';
+# that makes it possible for us to use a single session file to store both predicate and colorcat entry
+# that is simlog entry
+declare -a pass_args_predicate=(\
+  '--name' 'simlog-entry' \
+  '--session-file' "$history_file" \
+)
 
-if $is_edit ; then
-  vim -f "$history_file"
+predicate=
+is_log_arg=true
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --)
+        is_log_arg=false
+        shift
+        ;;
+      *)
+        if $is_log_arg ; then
+          if [ "$key" = '--predicate' ] && [ "$#" -gt 1 ]; then
+            predicate="$2"
+            shift
+          else
+            pass_args_log+=("$key")
+          fi
+        else
+          pass_args_predicate+=("$key")
+        fi
+        shift
+        ;;
+  esac
+done
+
+trim_entry() {
+  sed 's/^[[:blank:]]\{1,\}//' | \
+    sed 's/[[:blank:]]\{1,\}$//' | \
+    sed '/^[[:blank:]]*#/ d' | \
+    sed '/^$/ d'
+}
+
+entry=$(shellpack_lru_entry "${pass_args_predicate[@]}")
+rc=$?
+if [ "$rc" -eq 2 ] ; then
   exit
+elif [ "$rc" -ne 0 ] ; then
+  exit 1
 fi
 
-if $is_edit_color ; then
-  vim -f "$coloccat_session_file"
-  exit
-fi
+interactively_specified_predicate=$(echo "$entry" | \
+  sed -n 's/^[[:blank:]]*predicate[[:blank:]]*:[[:blank:]]*\(..*\)$/\1/p' | \
+  trim_entry)
 
+if ! [[ "$interactively_specified_predicate" =~ ^[[:space:]]*$ ]] ; then
+  predicate="$interactively_specified_predicate"
+fi
+if [ -n "$predicate" ] ; then
+  pass_args_log+=('--predicate' "$predicate")
+fi
 
 device_id=$(simget)
 if [ -z "$device_id" ] ; then
   exit 1
 fi
 
-select_predicate_from_history() {
-  load_history() {
-    if [ -r "$history_file" ] ; then
-      cat "$history_file"
-    fi
-  }
-
-  trim_entry() {
-    sed 's/^[[:space:]]\{1,\}//' | sed 's/^[[:space:]]\{1,\}$//' | sed '/^[[:space:]]*#/ d' | sed '/^$/ d'
-  }
-
-  edit_new_entry() {
-    local ttyname
-    ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
-    local tmp_file
-    tmp_file=$(mktemp)
-    >"$tmp_file" echo -e "#Example:\nprocessImagePath contains[c] \"GVideo\""
-    0<"$ttyname" 1>"$ttyname" vim -f "$tmp_file"
-    trim_entry <"$tmp_file"
-    rm "$tmp_file"
-  }
-
-  edit_entry='Or, edit new entry'
-
-  is_new_entry=false
-  loaded_history=$(load_history)
-  selected_entry=
-  if [ -n "$loaded_history" ] ; then
-    declare -a entries
-    {
-      while read -r -d '' line ; do
-        if [ -z "$line" ] ; then
-          continue
-        fi
-        entries+=("$line")
-      done
-    } <<<"$loaded_history"
-
-    if [ "${#entries[@]}" -gt 0 ] ; then
-      echo "Total number of history entries: ${#entries[@]}"$'\n'"Choose one:"
-      entries+=("$edit_entry")
-      select choice in "${entries[@]}" ; do
-        if [ -z "$choice" ] ; then
-          continue
-        fi
-        selected_index=$(echo "$REPLY" | sed 's/[[:space:]]//g')
-        choice="${entries[selected_index-1]}"
-        if [ "$choice" = "$edit_entry" ] ; then
-          selected_entry=$(edit_new_entry)
-          is_new_entry=true
-        else
-          selected_entry="$choice"
-        fi
-        break
-      done
-    else
-      selected_entry=$(edit_new_entry)
-      is_new_entry=true
-    fi
-  fi
-  if [ -z "$loaded_history" ] ; then
-    selected_entry=$(edit_new_entry)
-    is_new_entry=true
-  fi
-
-  echo -e "Selected_entry:\n${selected_entry}"
-
-  predicate="$selected_entry"
-  if $is_new_entry ; then
-    echo "${selected_entry}" >>"$history_file"
-  fi
-}
-
-if [ -z "$predicate" ] ; then
-  select_predicate_from_history
-fi
-
-if [ -z "$predicate" ] ; then
-  predicate='1!=2'
-fi
-
-xcrun simctl spawn "$device_id" log stream --color always --predicate "$predicate" "${pass_args[@]}" 2>&1 | colorcat --session-file "$coloccat_session_file"
+xcrun simctl spawn "$device_id" \
+  log stream --color always "${pass_args_log[@]}" 2>&1 | \
+  colorcat --selected-entry "$entry"
