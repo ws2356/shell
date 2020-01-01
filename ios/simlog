@@ -73,4 +73,10 @@ fi
 
 xcrun simctl spawn "$device_id" \
   log stream --color always "${pass_args_log[@]}" 2>&1 | \
-  colorcat --selected-entry "$entry"
+  {
+    if [[ "$entry" =~ ^[[:space:]]*$ ]] ; then
+      cat
+    else
+      colorcat --selected-entry "$entry"
+    fi
+  }

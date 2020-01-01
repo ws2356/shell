@@ -2,6 +2,7 @@
 
 if ! declare -F shellpack_lru_entry >/dev/null ; then
   shellpack_lru_entry() {
+    local LRU_MAX=10
     # [Optional] Default: entry. You may want to use your own concept by passing: --name <name of whatever you want shellpack_lru_entry to manage for you>.
     local name=
     # [Optional] The prompt text when displaying bash select menu for use to choose from.
@@ -97,10 +98,27 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
         sed '/^$/ d'
     }
 
+    local -a real_entries=()
+
     edit_new_entry() {
+      local -r DEMO=5
       local tmp_file
       tmp_file=$(mktemp)
       >"$tmp_file" echo -e "${example_entry}"
+
+      local concated=
+      local count=0
+      for ent in "${real_entries[@]:0:DEMO}" ; do
+        ((++count))
+        if [ -n "$concated" ] ; then
+          concated+=$'\n'
+        fi
+        concated+=$'\n'"${count}: $ent"
+      done
+      if [ "$count" -gt 0 ] ; then
+        >>"$tmp_file" echo -e "\n# Also, you can refer to most recently ${count} entries"
+        >>"$tmp_file" sed 's/^/# /' <<<"$concated"
+      fi
 
       0<"$ttyname" 1>"$ttyname" vim -f "$tmp_file"
       <"$tmp_file" trim_entry
@@ -116,20 +134,20 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
 
     loaded_entry=$(load_history)
 
-    declare -a entries=()
     if [ -n "$loaded_entry" ] ; then
       {
         while read -r -d '' line ; do
           if [[ "$line" =~ ^[[:space:]]*$ ]] ; then
             continue
           fi
-          entries+=("$line")
+          real_entries+=("$line")
         done
       } <<<"$loaded_entry"
     fi
 
     1>&2 echo "$select_prompt"
 
+    local -a entries=("${real_entries[@]:0}")
     entries+=("$edit_entry" "$no_entry")
 
     # Transform entry to one liner
@@ -160,8 +178,22 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
       done || is_no_entry=true
     } 1>&2 <"${ttyname}"
 
-    if $is_new_entry && [ -n "$selected_entry" ] ; then
-      echo "${selected_entry}" >>"$session_file"
+    local len=${#entries[@]}
+    if [ -n "$selected_entry" ] ; then
+      local file_content="$selected_entry"
+      local count=1
+      for old_entry in "${real_entries[@]}" ; do
+        if [ "$old_entry" = "$selected_entry" ] ; then
+          continue
+        fi
+        file_content+=''$'\n'"$old_entry"
+        ((++count))
+        if [ $count -ge $LRU_MAX ] ; then
+          break
+        fi
+      done
+      file_content+=
+      echo "$file_content" >"$session_file"
     fi
 
     printf '%s' "${selected_entry}"
