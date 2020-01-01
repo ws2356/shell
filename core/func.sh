@@ -14,9 +14,14 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
     local session_file=
     # [Optional] Supposed to be passed when user want to edit history entries. If passed, this script will just open it & return.
     local is_edit=false
+    local is_verbose=false
     while [ "$#" -gt 0 ] ; do
       key="$1"
       case $key in
+          --verbose)
+          is_verbose=true
+          shift
+          ;;
           --name)
           name="$2"
           shift ; shift
@@ -60,8 +65,9 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
       edit_prompt="Edit new ${name}"
     fi
     if [ -z "$example_entry" ] ; then
-      example_entry="# ${edit_prompt}"$'\n'"# Lines whose first non whitespace character is # are ignored."
+      example_entry="# ${edit_prompt}"
     fi
+    example_entry+=$'\n'"# Lines whose first non whitespace character is # are ignored."
 
     local ttyname
     ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
@@ -160,6 +166,7 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
 
     printf '%s' "${selected_entry}"
   }
+  export -f shellpack_lru_entry
 else
   echo "Duplicated func definition, ignoring: shellpack_lru_entry @${BASH_SOURCE[0]}:${LINENO}"
 fi

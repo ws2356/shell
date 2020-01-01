@@ -29,6 +29,17 @@ done
 
 # pass_args 参数直接relay给cat
 
+declare -A color_map
+color_map[black]='[30m'
+color_map[red]='[31m'
+color_map[green]='[32m'
+color_map[yellow]='[33m'
+color_map[blue]='[34m'
+color_map[magenta]='[35m'
+color_map[cyan]='[36m'
+color_map[white]='[37m'
+color_reset_code='[0m'
+
 # 优先使用gsed
 used_sed() {
   if type gsed >/dev/null 2>&1 ; then
@@ -50,8 +61,21 @@ if [ -n "$session_file" ] ; then
   history_file="$session_file"
 fi
 
+declare -a shellpack_lru_entry_args=( \
+  '--name' 'colorcat session' \
+  '--session-file' "$history_file" \
+  '--example-entry' "#Format:\n#color: <red|green|blue|black|yellow|magenta|cyan|white>\n#re: ^re1\n#re: ^re2\$" \
+)
+
 if $is_edit ; then
-  vim -f "$history_file"
+  shellpack_lru_entry_args+=('--edit')
+fi
+if $is_verbose ; then
+  shellpack_lru_entry_args+=('--verbose')
+fi
+
+selected_entry=$(shellpack_lru_entry "${shellpack_lru_entry_args[@]}")
+if $is_edit ; then
   exit
 fi
 
@@ -67,106 +91,6 @@ fi
 # 2. entry之间的分隔符
 # 
 # ============
-
-declare -A color_map
-color_map[black]='[30m'
-color_map[red]='[31m'
-color_map[green]='[32m'
-color_map[yellow]='[33m'
-color_map[blue]='[34m'
-color_map[magenta]='[35m'
-color_map[cyan]='[36m'
-color_map[white]='[37m'
-color_reset_code='[0m'
-
-load_history() {
-  if [ -r "$history_file" ] ; then
-    cat "$history_file"
-  fi
-}
-
-# 删除行首、行末空白符
-# 删除空行
-trim_entry() {
-  sed 's/^[[:space:]]\{1,\}//' | sed 's/^[[:space:]]\{1,\}$//' | sed '/^[[:space:]]*#/ d' | sed '/^$/ d'
-}
-
-# 这个函数需要在pipe环境下，通过终端和用户交互，获取后面操作需要的选项
-edit_new_entry() {
-  local tmp_file
-  tmp_file=$(mktemp)
-  >"$tmp_file" echo -e "#Format:\n#color: <red|green|blue|black|yellow|magenta|cyan|white>\n#re: ^re1\n#re: ^re2\$"
-
-  local ttyname
-  ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
-  # 下面一行为什么也能工作（没重定向stdin）？
-  # 说明vim始终把控制终端作为stdin，而不是盲目使用继承自父进程的stdin？
-  # >"$ttyname" vim -f "$tmp_file"
-  0<"$ttyname" 1>"$ttyname" vim -f "$tmp_file"
-  <"$tmp_file" trim_entry
-  rm "$tmp_file"
-}
-
-edit_entry='Or, edit new entry'
-no_color='Or, no extra color'
-
-is_new_entry=false
-is_no_color=false
-loaded_history=$(load_history)
-selected_entry=
-
-declare -a entries=()
-if [ -n "$loaded_history" ] ; then
-  {
-    while read -r -d '' line ; do
-      if [ -z "$line" ] ; then
-        continue
-      fi
-      entries+=("$line")
-    done
-  } <<<"$loaded_history"
-fi
-
-1>&2 echo "Total number of history entries: ${#entries[@]}"
-if [ "${#entries[@]}" -gt 0 ] ; then
-  1>&2 echo "Choose one:"
-fi
-
-entries+=("$edit_entry")
-entries+=("$no_color")
-ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
-declare -a displayed_entries=()
-for item in "${entries[@]}" ; do
-  displayed_item=$(printf '%s' "$item" | sed -e ':a' -e '$!N;s/\n/\//;ta')
-  displayed_entries+=("$displayed_item")
-done
-{
-  select choice in "${displayed_entries[@]}" ; do
-    if [ -z "$choice" ] ; then
-      continue
-    fi
-    selected_index=$(echo "$REPLY" | sed 's/[[:space:]]//g')
-    choice="${entries[selected_index-1]}"
-    if [ "$choice" = "$edit_entry" ] ; then
-      selected_entry=$(edit_new_entry)
-      is_new_entry=true
-    elif [ "$choice" = "$no_color" ] ; then
-      selected_entry=''
-      is_no_color=true
-    else
-      selected_entry="$choice"
-    fi
-    break
-  done
-} 1>&2 <"${ttyname}"
-
-if [ -n "$selected_entry" ] ; then
-  1>&2 echo -e "Selected_entry:\n${selected_entry}"
-fi
-
-if $is_new_entry ; then
-  echo "${selected_entry}" >>"$history_file"
-fi
 
 colorcat_imp() {
   local concated_cmd_bre=
@@ -221,18 +145,18 @@ colorcat_imp() {
   fi
 
   if [ -n "$concated_cmd_re" ] && [ -n "$concated_cmd_bre" ] ; then
-    used_sed "$concated_cmd_bre" | used_sed -E "$concated_cmd_re"
+    cat "${pass_args[@]}" | used_sed "$concated_cmd_bre" | used_sed -E "$concated_cmd_re"
   elif [ -n "$concated_cmd_re" ] ; then
-    used_sed -E "$concated_cmd_re"
+    cat "${pass_args[@]}" | used_sed -E "$concated_cmd_re"
   elif [ -n "$concated_cmd_bre" ] ; then
-    used_sed "$concated_cmd_bre"
+    cat "${pass_args[@]}" | used_sed "$concated_cmd_bre"
   else
-    cat
+    cat "${pass_args[@]}"
   fi
 }
 
-if $is_no_color ; then
-  cat
+if [[ "$selected_entry" =~ ^[[:space:]]*$ ]] ; then
+  cat "${pass_args[@]}"
 else
-  cat "${pass_args[@]}" | colorcat_imp "$selected_entry"
+  colorcat_imp "$selected_entry"
 fi
