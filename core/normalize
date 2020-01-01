@@ -13,10 +13,7 @@ else
   is_relative=true
 fi
 
-IFS_=$IFS
-IFS='/'
-read -a components <<<"$p"
-IFS=$IFS_
+IFS='/' read -r -a components <<<"$p"
 
 declare -a stack=()
 for c in "${components[@]}" ; do
