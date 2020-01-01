@@ -32,7 +32,8 @@ if ! declare -F simget >/dev/null ; then
 
     local simulators
     IFS_=$IFS
-    IFS=$'\n' simulators=($(xcrun simctl list -j | jq -r '.devices["'"${selected_os_id}"'"] | .[] | (.name + "," + .udid)'))
+    IFS=$'\n'
+    simulators=($(xcrun simctl list -j | jq -r '.devices["'"${selected_os_id}"'"] | .[] | (.name + "," + .udid)'))
     IFS=$IFS_
     local -a device_names
     local -A device_id_by_name

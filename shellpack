@@ -95,16 +95,16 @@ for item in "${tree_list[@]}" ; do
   tree_list2+=("$(pwd)/$item")
 done
 IFS_=$IFS
-export IFS=$'\n'
+IFS=$'\n'
 tree_list_str="${tree_list2[*]}"
-export IFS=$IFS_
+IFS=$IFS_
 
 cat >shellpack_loader.sh <<EOFEOF
 declare -a _shellpack_tree_list
 IFS_=\$IFS
-export IFS=$'\n'
+IFS=$'\n'
 _shellpack_tree_list=($tree_list_str)
-export IFS=\$IFS_
+IFS=\$IFS_
 EOFEOF
 
 EOF

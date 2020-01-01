@@ -20,7 +20,8 @@ sudo cp -r "$mount_point"/*.app /Applications || true
 # install *.pkg
 if ls "$mount_point"/*.pkg >/dev/null 2>&1 ; then
   IFS_=$IFS
-  IFS=$'\n' pkgs=($(ls -1 "$mount_point"/*.app))
+  IFS=$'\n'
+  pkgs=($(ls -d -1 "$mount_point"/*.app))
   IFS=$IFS_
   for pkg in "${pkgs[@]}" ; do
     sudo installer -pkg "$pkg" -target /
