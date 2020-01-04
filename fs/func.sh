@@ -50,24 +50,24 @@ else
   echo "Duplicated func definition, ignoring: resolvelink @${BASH_SOURCE[0]}:${LINENO}"
 fi
 
-if ! declare -F currentpath >/dev/null ; then
-  currentpath() {
-    bash_source=$1
-    if type -f "$bash_source" >/dev/null 2>&1 ; then
-      bash_source=$(type -p "$bash_source")
-    else
-      if [ ! -e "$bash_source" ] ; then
+if ! declare -F fullpath >/dev/null ; then
+  fullpath() {
+    local file_path=
+    # 是否一个可执行程序
+    if ! file_path=$(type -p "$1" 2>/dev/null) ; then
+      # 是否存在，解析软连接
+      if ! file_path=$(resolvelink "$1") ; then
         return 1
       fi
     fi
-    if expr "$bash_source" : '/..*' >/dev/null ; then
-      p=$bash_source
+    if expr "$file_path" : '/..*' >/dev/null ; then
+      p=$file_path
     else
-      p=$(pwd)/$bash_source
+      p=$(pwd)/$file_path
     fi
     echo "$p"
   }
-  export -f currentpath
+  export -f fullpath
 else
-  echo "Duplicated func definition, ignoring: currentpath @${BASH_SOURCE[0]}:${LINENO}"
+  echo "Duplicated func definition, ignoring: fullpath @${BASH_SOURCE[0]}:${LINENO}"
 fi

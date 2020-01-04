@@ -10,8 +10,8 @@ if ! declare -F simget >/dev/null ; then
     local os_version
     local os_id
     for item in ${runtimes} ; do
-      os_version=$(echo "$item" | sed 's/,..*//')
-      os_id=$(echo "$item" | sed 's/[^,]\{1,\},//')
+      os_version=$(printf '%s' "$item" | sed 's/,..*//')
+      os_id=$(printf '%s' "$item" | sed 's/[^,]\{1,\},//')
       runtime_id_by_version["$os_version"]=$os_id
       runtime_versions+=("$os_version")
     done
@@ -40,8 +40,8 @@ if ! declare -F simget >/dev/null ; then
     local device_name
     local device_id
     for item in "${simulators[@]}" ; do
-      device_name=$(echo "$item" | sed 's/,..*//')
-      device_id=$(echo "$item" | sed 's/[^,]\{1,\},//')
+      device_name=$(printf '%s' "$item" | sed 's/,..*//')
+      device_id=$(printf '%s' "$item" | sed 's/[^,]\{1,\},//')
       device_id_by_name["$device_name"]=$device_id
       device_names+=("$device_name")
     done
@@ -57,9 +57,76 @@ if ! declare -F simget >/dev/null ; then
       break;
     done
     selected_device_id=${device_id_by_name[$selected_device_name]}
-    echo "$selected_device_id"
+    printf '%s' "$selected_device_id"
   }
   export -f simget
 else
   echo "Duplicated func definition, ignoring: simget @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F get_default_sdk_name >/dev/null ; then
+  get_default_sdk_name() {
+    # looks those two are the same
+    get_default_platform
+  }
+  export -f get_default_sdk_name
+else
+  echo "Duplicated func definition, ignoring: get_default_sdk_name @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F get_default_platform >/dev/null ; then
+  get_default_platform() {
+    printf '%s' iphoneos
+  }
+  export -f get_default_platform
+else
+  echo "Duplicated func definition, ignoring: get_default_platform @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F get_default_ios_version >/dev/null ; then
+  get_default_ios_version() {
+    xcrun -sdk "$(get_default_sdk_name)" -show-sdk-version
+  }
+  export -f get_default_ios_version
+else
+  echo "Duplicated func definition, ignoring: get_default_ios_version @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F get_default_ios_sdk_path >/dev/null ; then
+  get_default_ios_sdk_path() {
+    xcrun -sdk "$(get_default_sdk_name)" -show-sdk-path
+  }
+  export -f get_default_ios_sdk_path
+else
+  echo "Duplicated func definition, ignoring: get_default_ios_sdk_path @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F get_swift_host_triplet >/dev/null ; then
+  get_swift_host_triplet() {
+    local platform=${1:-$(get_default_platform)}
+    local version=${2:-$(get_default_ios_version)}
+
+    local arch=
+    case $platform in
+      iphoneos)
+        arch=arm64
+        ;;
+      *)
+        arch=x86_64
+        ;;
+    esac
+    local os=
+    case ${platform} in
+      macos)
+        os=macos
+        ;;
+      *)
+        os=ios
+        ;;
+    esac
+    printf '%s' "${arch}-apple-${os}${version}-${platform}"
+  }
+  export -f get_swift_host_triplet
+else
+  echo "Duplicated func definition, ignoring: get_swift_host_triplet @${BASH_SOURCE[0]}:${LINENO}"
 fi
