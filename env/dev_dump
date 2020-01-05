@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+output_file=~/.$(basename "$0").log
+
+dump_cmd_info() {
+  local cmd=$1
+  shift
+
+  local -a cmd_opt=()
+  local has_version_opt=false
+  while [ "$#" -gt 0 ] ; do
+    key="$1"
+    cmd_opt+=("$key")
+    case $key in
+        -version|--version)
+        has_version_opt=true
+        shift
+        ;;
+    esac
+  done
+
+  if ! $has_version_opt ; then
+    cmd_opt+=(--version)
+  fi
+
+  if ! type "$cmd" 2>/dev/null 1>&2 ; then
+    return
+  fi
+  echo "================================="
+  echo "cmd: $cmd, cmd_opt: ${cmd_opt[*]}"
+  echo "---------------------------------"
+  "$cmd" "${cmd_opt[@]}" 2>&1
+  echo ""
+}
+
+>"$output_file" dump_cmd_info ctags
+>>"$output_file" dump_cmd_info rg
+>>"$output_file" dump_cmd_info java -version
+>>"$output_file" dump_cmd_info vim

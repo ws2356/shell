@@ -142,6 +142,8 @@ shellpack_load_summary() {
     fi
   done
 } < <(find "${_shellpack_tree_list[@]}" -type f)
+
+( dev_dump & ) 2>/dev/null 1>&2
 EOF
 EOFEOF
 
