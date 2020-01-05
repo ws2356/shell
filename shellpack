@@ -150,12 +150,10 @@ EOFEOF
 cat <<"EOF"
 cwd=$(pwd)
 
-shellpack_loader_installed_path=${cwd}/shellpack_loader.sh
-source_loader_line=". \"${shellpack_loader_installed_path}\""
-if grep -E '^\. "'"${shellpack_loader_installed_path}"'"' "${HOME}/.bashrc" >/dev/null 2>&1 ; then
-  sed -i.bak 's;^\. "'"${shellpack_loader_installed_path}"'".*$;'"${source_loader_line};" "${HOME}/.bashrc" \
-  && rm "${HOME}/.bashrc.bak"
-else
+shellpack_loader_installed_path="${cwd}/shellpack_loader.sh"
+shellpack_loader_installed_path="${shellpack_loader_installed_path/${HOME}/'~'}"
+source_loader_line=". ${shellpack_loader_installed_path}"
+if ! grep "${source_loader_line}" "${HOME}/.bashrc" >/dev/null 2>&1 ; then
   echo "$source_loader_line" >>"${HOME}/.bashrc"
 fi
 EOF
