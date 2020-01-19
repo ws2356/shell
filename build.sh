@@ -2,7 +2,7 @@
 install_dir=${1:-}
 
 [ -d build ] || mkdir build
-./shellpack core fs ios mobile osx env >build/install.sh
+./shellpack core fs ios mobile osx env tool >build/install.sh
 chmod +x build/install.sh
 
 if [ -z "$install_dir" ] ; then
