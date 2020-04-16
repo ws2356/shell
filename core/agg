@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -eu
+
+ret=0
+
+while read -r num ; do
+  if ! [[ "$num" =~ (^|-)[0-9]+ ]] ; then
+    continue
+  fi
+  ret=$(printf '%f + %f\n' "$ret" "$num" | bc)
+done
+
+echo $ret
