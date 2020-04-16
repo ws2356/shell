@@ -130,3 +130,28 @@ if ! declare -F get_swift_host_triplet >/dev/null ; then
 else
   echo "Duplicated func definition, ignoring: get_swift_host_triplet @${BASH_SOURCE[0]}:${LINENO}"
 fi
+
+if ! declare -F guess_swift_host_triplet >/dev/null ; then
+  guess_swift_host_triplet() {
+    local os
+    os=$(basename "$(xcrun --toolchain swift  --show-sdk-platform-path)" '.platform')
+    os=${os,,*}
+    local version
+    version=$(xcrun --toolchain swift  --show-sdk-version)
+    local arch
+    case $os in
+      macosx)
+        arch=x86_64;;
+      *simulator*)
+        arch=x86_64;;
+      *iphone*)
+        arch=arm64;;
+      *)
+        arch=armv7;;
+    esac
+    printf '%s' "${arch}-apple-${os}${version}"
+  }
+  export -f guess_swift_host_triplet
+else
+  echo "Duplicated func definition, ignoring: guess_swift_host_triplet @${BASH_SOURCE[0]}:${LINENO}"
+fi

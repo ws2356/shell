@@ -21,7 +21,7 @@ pack_file() {
   done
   # 设置执行权限
   local perm
-  perm=$(stat -f '%Lp' "$file")
+  perm=$(stat -f '%Lp' "$file" 2>/dev/null | stat --printf='%a' "$file")
   # mkdir
   echo "# Generate file: $file_relative"
   echo 'mkdir -p "'"$dir_relative"'"'
@@ -55,12 +55,12 @@ done
 
 EOF
 
-re_source_filename_exclude='.+\.swp|\.tags|\.DS_Store|.+\.part'
+re_source_filename_exclude='.+\.swp$|\.tags$|\.DS_Store$|.+\.part$'
 for tree in "${trees[@]}"; do
   full_tree_path=`(cd "${tree}" && pwd)`
   tree_name=$(basename "$tree")
-  files=($(find -E "${full_tree_path%%/}" \
-    -type f -and -not -iregex "$re_source_filename_exclude" ))
+  files=($(find "${full_tree_path%%/}" \
+    -type f | grep -v -E "$re_source_filename_exclude" ))
   for file in "${files[@]}"; do
     relative_file_path=${file#$full_tree_path}
     relative_file_path="${tree_name}$relative_file_path"

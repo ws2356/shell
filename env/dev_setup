@@ -12,6 +12,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew install vim
 brew install rmtrash
+brew install tree
 
 ## Xcode: Mac Store
 ##  iTerm2
