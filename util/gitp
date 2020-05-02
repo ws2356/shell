@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -eu
+
+export SOCK5_ADDR="${SOCK5_ADDR:-127.0.0.1:8200}"
+
+git_ssh=$(mktemp /tmp/git_ssh.XXXXXX)
+chmod +x "$git_ssh"
+
+cat >"$git_ssh" <<EOF
+#!/usr/bin/env bash
+ssh -o ProxyCommand='nc -X 5 -x $SOCK5_ADDR %h %p' "\$@"
+EOF
+
+# 支持http，git两种地址
+ALL_PROXY="socks5://${SOCK5_ADDR}" GIT_SSH="$git_ssh" git "$@"
