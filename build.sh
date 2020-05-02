@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-install_dir=${1:-}
+set -eu
+default_install_dir=~/.config/shellpack/bin
+install_dir=${1:-$default_install_dir}
 
 [ -d build ] || mkdir build
-./shellpack core fs ios mobile osx env tool >build/install.sh
+./shellpack core fs ios mobile osx env tool util >build/install.sh
 chmod +x build/install.sh
-
-if [ -z "$install_dir" ] ; then
-  exit
-fi
 
 [ -d "$install_dir" ] || mkdir -p "$install_dir"
 old_contents=$(ls -Al "$install_dir")

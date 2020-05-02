@@ -21,7 +21,13 @@ pack_file() {
   done
   # 设置执行权限
   local perm
-  perm=$(stat -f '%Lp' "$file" 2>/dev/null | stat --printf='%a' "$file")
+  local os
+  os=$(uname)
+  if [[ "${os,,?}" =~ darwin ]] ; then
+    perm=$(stat -f '%Lp' "$file")
+  else
+    perm=$(stat -f '%Lp' "$file" 2>/dev/null | stat --printf='%a' "$file")
+  fi
   # mkdir
   echo "# Generate file: $file_relative"
   echo 'mkdir -p "'"$dir_relative"'"'
