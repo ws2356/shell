@@ -8,7 +8,7 @@ install_dir=${1:-$default_install_dir}
 chmod +x build/install.sh
 
 [ -d "$install_dir" ] || mkdir -p "$install_dir"
-old_contents=$(ls -Al "$install_dir")
+old_contents=$(ls -l "$install_dir")
 if [ -n "$old_contents" ] ; then
   read -p \
     "$install_dir has following contents: ${old_contents}"$'\n'" u sure to remove them(true|false)?"$'\n' \
