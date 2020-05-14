@@ -7,7 +7,9 @@ if ! declare -F flutter_select >/dev/null ; then
       if [ -z "$ver" ] ; then
         continue
       fi
-      export PATH="${HOME}/flutter/${ver}/bin:${PATH}"
+      local flutter_bindir="${HOME}/flutter/${ver}/bin"
+      local dart_bindir="${flutter_bindir}/cache/dart-sdk/bin"
+      export PATH="${flutter_bindir}:${dart_bindir}:${PATH}"
       break
     done
   }
