@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -eu
+
+# commit whose descendants you want to view graphically
+if [ $# -ge 1 ] ; then
+  commit="${1}"
+  shift
+else
+  commit="head"
+fi
+
+# locate git_dir
+git_dir_root=$(pwd)
+while ! [ -d "${git_dir_root}/.git" ] && [ "$git_dir_root" != / ] ; do
+  git_dir_root="$(dirname "$git_dir_root")"
+done
+
+git_dir="${git_dir_root}/.git"
+if ! [ -d "$git_dir" ] ; then
+  echo "Found no git repositary."
+  exit 1
+fi
+
+# list branches
+declare -a all_ref_ranges=()
+git_ref_dir="${git_dir}/refs"
+heads_dir="${git_ref_dir}/heads"
+
+declare -a branches
+IFS_="$IFS"
+IFS=$'\n' branches=($(find "$heads_dir" -type f))
+IFS="$IFS_"
+
+for ref in "${branches[@]}" ; do
+  ref_name="$(printf "%s" "$ref" | sed -E "s|^${heads_dir}/||")"
+  check_relation_res="$(git log -1 "${ref_name}..${commit}")"
+  if [ -n "$check_relation_res" ] ; then
+    continue
+  fi
+  all_ref_ranges+=("${commit}..${ref_name}")
+done
+
+git log --graph  "$@" "${all_ref_ranges[@]}"
