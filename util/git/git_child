@@ -40,4 +40,4 @@ for ref in "${branches[@]}" ; do
   all_ref_ranges+=("${commit}..${ref_name}")
 done
 
-git log --graph  "$@" "${all_ref_ranges[@]}"
+git log --graph --oneline --decorate --color --abbrev-commit  --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' --date=format-local:'%Y-%m-%d %z %a' "$@" "${all_ref_ranges[@]}"
