@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -eu
+
+which_remote=origin
+my_names=()
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --remote)
+      which_remote="$2"
+      shift ; shift
+      ;;
+      *)
+      my_names+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# locate git_dir
+git_dir_root=$(pwd)
+while ! [ -d "${git_dir_root}/.git" ] && [ "$git_dir_root" != / ] ; do
+  git_dir_root="$(dirname "$git_dir_root")"
+done
+git_dir="${git_dir_root}/.git"
+if ! [ -d "$git_dir" ] ; then
+  echo "Found no git repositary."
+  exit 1
+fi
+
+# get all branches
+git_ref_dir="${git_dir}/refs"
+heads_dir="${git_ref_dir}/heads"
+remote_dir="${git_ref_dir}/remotes"
+declare -a branches=()
+IFS_="$IFS"
+IFS=$'\n'
+branches+=($(cd "$heads_dir" && find * -type f))
+branches+=($(cd "$remote_dir" && find "$which_remote" -type f))
+IFS="$IFS_"
+
+# 至少包含gitconfig里的名字
+my_names+=("$(git config --get user.name)")
+is_me() {
+  for item in "${my_names[@]}"; do
+    if [ "$item" = "$1" ] ; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# filter branches
+declare -a my_branches=()
+for bb in "${branches[@]}"; do
+  author="$(git show -s --pretty=format:'%an' "$bb")"
+  if ! is_me "$author" ; then
+    continue
+  fi
+  my_branches+=("$bb")
+done
+
+git log --graph --oneline --decorate \
+  --color --abbrev-commit \
+  --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' \
+  --date=format-local:'%Y-%m-%d %z %a' \
+  "${my_branches[@]}"
+
