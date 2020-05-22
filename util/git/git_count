@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+declare -a args=("$@")
+if [ $# -lt 2 ] ; then
+  args+=('head')
+fi
+set -- "${args[@]}"
+
+git diff --numstat "$@" | agg
