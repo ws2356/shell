@@ -1,63 +1,66 @@
 #!/usr/bin/env bash
 
 if ! declare -F simget >/dev/null ; then
-  simget() {
-    local runtimes
-    # cast to lowercase
-    IFS=$'\n' runtimes=$(xcrun simctl list -j | jq -r '.runtimes | .[] | (.name + "," + .identifier)')
-    local -a runtime_versions
-    local -A runtime_id_by_version
-    local os_version
-    local os_id
-    for item in ${runtimes} ; do
-      os_version=$(printf '%s' "$item" | sed 's/,..*//')
-      os_id=$(printf '%s' "$item" | sed 's/[^,]\{1,\},//')
-      runtime_id_by_version["$os_version"]=$os_id
-      runtime_versions+=("$os_version")
+  __array_contains() {
+    local -n arr=$1
+    local item
+    for item in "${arr[@]}" ; do
+      if [ "${item,,}" = "$2" ] ; then
+        return 0
+      fi
     done
-    if [ "${#runtime_id_by_version[@]}" -le 0 ] ; then
-      return 1
-    fi
+    return 1
+  }
+  export -f __array_contains
 
-    echo "选择系统版本：" 1>&2
-    local selected_os_version=
-    select item in "${runtime_versions[@]}" ; do
-      if [ -z "$item" ] ; then
+  simget() {
+    local -a runtimes
+
+    local IFS_=$IFS
+    IFS=$'\n' runtimes=($(xcrun simctl list -j | jq -r ".devices | keys | .[]"))
+    IFS=$IFS_
+
+    local -a displayed_os_list=()
+
+    local ii=0
+    while [ "$ii" -lt "${#runtimes[@]}" ] ; do
+      local os="${runtimes[ii]}"
+      IFS_=$IFS
+      IFS=$'\n' devices=($(xcrun simctl list -j | jq -r ".devices[\"$os\"] | .[] | .state"))
+      IFS_=$IFS
+      if __array_contains devices booted ; then
+        displayed_os_list+=("* ${os}")
+      else
+        displayed_os_list+=("  ${os}")
+      fi
+      ii=$((ii + 1))
+    done
+
+    local selected_os=
+    select selected_os in "${displayed_os_list[@]}" ; do
+      if [ -z "$selected_os" ] ; then
         continue
       fi
-      selected_os_version=$item
       break
     done
-    local selected_os_id=${runtime_id_by_version[$selected_os_version]}
 
-    local simulators
+    selected_os="${selected_os##\*}"
+    selected_os="${selected_os## }"
+
+    local -a devices
+    local device
     IFS_=$IFS
-    IFS=$'\n'
-    simulators=($(xcrun simctl list -j | jq -r '.devices["'"${selected_os_id}"'"] | .[] | (.name + "," + .udid)'))
-    IFS=$IFS_
-    local -a device_names
-    local -A device_id_by_name
-    local device_name
-    local device_id
-    for item in "${simulators[@]}" ; do
-      device_name=$(printf '%s' "$item" | sed 's/,..*//')
-      device_id=$(printf '%s' "$item" | sed 's/[^,]\{1,\},//')
-      device_id_by_name["$device_name"]=$device_id
-      device_names+=("$device_name")
-    done
+    IFS=$'\n' devices=($(xcrun simctl list -j | jq -r \
+      ".devices[\"$selected_os\"]"' | map(select(.isAvailable)) | .[] | {Shutdown:" ", Booted:"*"}[.state] + " " + .udid + ", " + .name'))
+          IFS_=$IFS
 
-    echo "选择机型：" 1>&2
-    local selected_device_name
-    local selected_device_id
-    select item in "${device_names[@]}" ; do
-      if [ -z "$item" ] ; then
+    select device in "${devices[@]}" ; do
+      if [ -z "$device" ] ; then
         continue
       fi
-      selected_device_name=$item
-      break;
+      printf '%s' "$device" | sed -n 's/^\*\{0,1\}[[:space:]]*\([-[:alnum:]]\{1,\}\).*$/\1/p'
+      break
     done
-    selected_device_id=${device_id_by_name[$selected_device_name]}
-    printf '%s' "$selected_device_id"
   }
   export -f simget
 else
