@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# currently only positive num
+num=$1
+ret=
+while [ "$num" -gt 0 ] ; do
+  ret="$((num & 1))$ret"
+  num=$((num >> 1))
+done
+echo "$ret"
