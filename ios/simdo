@@ -1,44 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-history_file=.simlog.hist
+history_file=.simdo.hist
 if [ -n "$SHELLPACK_HOME" ] ; then
   history_file="${SHELLPACK_HOME}/$history_file"
 fi
 
-declare -a pass_args_log=()
-# colorcat ignores any entry line that does not match 'color: xxx' and 're|bre: xxx';
-# that makes it possible for us to use a single session file to store both predicate and colorcat entry
-# that is simlog entry
 declare -a pass_args_shellpack_lru_entry=(\
   '--name' 'simlog-entry' \
   '--session-file' "$history_file" \
 )
-
-predicate=
-is_log_arg=true
-while [ "$#" -gt 0 ] ; do
-  key="$1"
-  case $key in
-      --)
-        is_log_arg=false
-        shift
-        ;;
-      *)
-        if $is_log_arg ; then
-          if [ "$key" = '--predicate' ] && [ "$#" -gt 1 ]; then
-            predicate="$2"
-            shift
-          else
-            pass_args_log+=("$key")
-          fi
-        else
-          pass_args_shellpack_lru_entry+=("$key")
-        fi
-        shift
-        ;;
-  esac
-done
 
 trim_entry() {
   sed 's/^[[:blank:]]\{1,\}//' | \
@@ -55,28 +26,7 @@ elif [ "$rc" -ne 0 ] ; then
   exit 1
 fi
 
-interactively_specified_predicate=$(echo "$entry" | \
-  sed -n 's/^[[:blank:]]*predicate[[:blank:]]*:[[:blank:]]*\(..*\)$/\1/p' | \
-  trim_entry)
+declare -a real_entry
+real_entry=($(echo "$entry" | trim_entry))
 
-if ! [[ "$interactively_specified_predicate" =~ ^[[:space:]]*$ ]] ; then
-  predicate="$interactively_specified_predicate"
-fi
-if [ -n "$predicate" ] ; then
-  pass_args_log+=('--predicate' "$predicate")
-fi
-
-device_id=$(simget)
-if [ -z "$device_id" ] ; then
-  exit 1
-fi
-
-xcrun simctl spawn "$device_id" \
-  log stream --color always "${pass_args_log[@]}" 2>&1 | \
-  {
-    if [[ "$entry" =~ ^[[:space:]]*$ ]] ; then
-      cat
-    else
-      colorcat --selected-entry "$entry"
-    fi
-  }
+xcrun simctl "${real_entry[@]}"
