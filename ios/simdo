@@ -7,7 +7,7 @@ if [ -n "$SHELLPACK_HOME" ] ; then
 fi
 
 declare -a pass_args_shellpack_lru_entry=(\
-  '--name' 'simlog-entry' \
+  '--name' 'simdo-entry' \
   '--session-file' "$history_file" \
 )
 

@@ -158,3 +158,24 @@ if ! declare -F guess_swift_host_triplet >/dev/null ; then
 else
   echo "Duplicated func definition, ignoring: guess_swift_host_triplet @${BASH_SOURCE[0]}:${LINENO}"
 fi
+
+if ! declare -F devget >/dev/null ; then
+  devget() {
+    IFS_=$IFS
+    IFS=$'\n' list=($(cfgutil --format JSON list | jq -r '.Output | values | .[] | .ECID + ", " + .name'))
+    IFS=$IFS_
+    ecid=
+    select item in "${list[@]}" ; do
+      if [ -z "$item" ] ; then
+        continue
+      fi
+      ecid="$(printf '%s' "$item" | sed 's/^[[:blank:]]*\([[:alnum:]]\{1,\}\).*$/\1/')"
+      break
+    done
+    printf '%s' "$ecid"
+  }
+  export -f devget
+else
+  echo "Duplicated func definition, ignoring: devget @${BASH_SOURCE[0]}:${LINENO}"
+fi
+

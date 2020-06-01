@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -e
+
+history_file=.devlog.hist
+if [ -n "$SHELLPACK_HOME" ] ; then
+  history_file="${SHELLPACK_HOME}/$history_file"
+fi
+
+declare -a pass_args_log=()
+# colorcat ignores any entry line that does not match 'color: xxx' and 're|bre: xxx';
+# that makes it possible for us to use a single session file to store both predicate and colorcat entry
+# that is simlog entry
+declare -a pass_args_shellpack_lru_entry=(\
+  '--name' 'devlog-entry' \
+  '--session-file' "$history_file" \
+)
+
+grep_expr=
+predicate=
+is_log_arg=true
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --grep)
+        grep_expr="$2"
+        shift
+        shift
+        ;;
+      --)
+        is_log_arg=false
+        shift
+        ;;
+      *)
+        if $is_log_arg ; then
+          pass_args_log+=("$key")
+        else
+          pass_args_shellpack_lru_entry+=("$key")
+        fi
+        shift
+        ;;
+  esac
+done
+
+trim_entry() {
+  sed 's/^[[:blank:]]\{1,\}//' | \
+    sed 's/[[:blank:]]\{1,\}$//' | \
+    sed '/^[[:blank:]]*#/ d' | \
+    sed '/^$/ d'
+}
+
+entry=$(shellpack_lru_entry "${pass_args_shellpack_lru_entry[@]}")
+rc=$?
+if [ "$rc" -eq 2 ] ; then
+  exit
+elif [ "$rc" -ne 0 ] ; then
+  exit 1
+fi
+
+ecid="$(devget)"
+
+cfgutil -e "$ecid" syslog "${pass_args_log[@]}" 2>&1 | \
+  {
+    if [[ "$entry" =~ ^[[:space:]]*$ ]] ; then
+      cat
+    else
+      colorcat --selected-entry "$entry"
+    fi
+  } | \
+    {
+      if [ -z "$grep_expr" ] ; then
+        cat
+      else
+        grep --color=always -E "$grep_expr"
+      fi
+    }
