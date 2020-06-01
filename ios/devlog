@@ -15,26 +15,19 @@ declare -a pass_args_shellpack_lru_entry=(\
   '--session-file' "$history_file" \
 )
 
-grep_expr=
-predicate=
-is_log_arg=true
+declare -a grep_args=()
+
+is_grep_args=false
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
-      --grep)
-        grep_expr="$2"
-        shift
-        shift
-        ;;
-      --)
-        is_log_arg=false
+      --grep-args)
+        is_grep_args=true
         shift
         ;;
       *)
-        if $is_log_arg ; then
-          pass_args_log+=("$key")
-        else
-          pass_args_shellpack_lru_entry+=("$key")
+        if $is_grep_args ; then
+          grep_args+=("$key")
         fi
         shift
         ;;
@@ -67,9 +60,9 @@ cfgutil -e "$ecid" syslog "${pass_args_log[@]}" 2>&1 | \
     fi
   } | \
     {
-      if [ -z "$grep_expr" ] ; then
-        cat
+      if [ "${#grep_args[@]}" -gt 0 ] ; then
+        grep --color=always "${grep_args[@]}"
       else
-        grep --color=always -E "$grep_expr"
+        cat
       fi
     }
