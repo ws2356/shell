@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 set -eu
 
-# commit whose descendants you want to view graphically
-if [ $# -ge 1 ] ; then
-  commit="${1}"
-  shift
-else
-  commit="head"
+which_remote=origin
+commit=
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      --remote)
+        which_remote="$2"
+        shift ; shift
+        ;;
+      *)
+        if [ -z "$commit" ] ; then
+          commit="$key"
+        fi
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$commit" ] ; then
+  commit='head'
 fi
 
 # locate git_dir
@@ -21,15 +35,19 @@ if ! [ -d "$git_dir" ] ; then
   exit 1
 fi
 
-# list branches
 declare -a all_ref_ranges=()
+
+# get all branches
 git_ref_dir="${git_dir}/refs"
 heads_dir="${git_ref_dir}/heads"
-
-declare -a branches
+remote_dir="${git_ref_dir}/remotes"
+declare -a branches=()
 IFS_="$IFS"
-IFS=$'\n' branches=($(find "$heads_dir" -type f))
+IFS=$'\n'
+branches+=($(cd "$heads_dir" && find * -type f))
+branches+=($(cd "$remote_dir" && find "$which_remote" -type f))
 IFS="$IFS_"
+
 
 for ref in "${branches[@]}" ; do
   ref_name="$(printf "%s" "$ref" | sed -E "s|^${heads_dir}/||")"
@@ -41,3 +59,4 @@ for ref in "${branches[@]}" ; do
 done
 
 git log --graph --oneline --decorate --color --abbrev-commit  --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' --date=format-local:'%Y-%m-%d %z %a' "$@" "${all_ref_ranges[@]}"
+which_remote=origin
