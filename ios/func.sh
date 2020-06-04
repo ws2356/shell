@@ -44,8 +44,10 @@ if ! declare -F simget >/dev/null ; then
       break
     done
 
-    selected_os="${selected_os##\*}"
-    selected_os="${selected_os## }"
+    # still not familar with bash pattern
+    # selected_os="${selected_os##\*}"
+    # selected_os="${selected_os## }"
+    selected_os="$(printf '%s' "$selected_os" | sed 's/^[*[:blank:]]\{1,\}//')"
 
     local -a devices
     local device
