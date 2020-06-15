@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -eu
+filename_glob=${1:-*.log}
+
+IFS_=$IFS ; IFS=$'\n' ; cat `find . -name "$filename_glob"` ; IFS=$IFS_ ;
