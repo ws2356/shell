@@ -35,15 +35,14 @@ while [ "$#" -gt 0 ] ; do
   esac
 done
 
-declare -A color_map
-color_map[black]='[30m'
-color_map[red]='[31m'
-color_map[green]='[32m'
-color_map[yellow]='[33m'
-color_map[blue]='[34m'
-color_map[magenta]='[35m'
-color_map[cyan]='[36m'
-color_map[white]='[37m'
+color_map_black='[30m'
+color_map_red='[31m'
+color_map_green='[32m'
+color_map_yellow='[33m'
+color_map_blue='[34m'
+color_map_magenta='[35m'
+color_map_cyan='[36m'
+color_map_white='[37m'
 color_reset_code='[0m'
 
 # 优先使用gsed
@@ -93,10 +92,10 @@ colorcat_imp() {
       fi
 
       if [[ "$line" =~ ^(re|bre):[[:blank:]]?(.+) ]] ; then
-        local color_code="${color_map[$current_color]}"
+        local color_code="$(eval 'printf %s "$color_map_'"$current_color\"")"
         if [ -z "$color_code" ] ; then
           1>&2 echo "Color not supported: $current_color, using white instead."
-          color_code="${color_map[white]}"
+          color_code="${color_map_white}"
         fi
 
         re_type="${BASH_REMATCH[1]}"
