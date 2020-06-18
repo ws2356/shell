@@ -2,10 +2,18 @@
 
 if ! declare -F simget >/dev/null ; then
   __array_contains() {
-    local -n arr=$1
+    local arr_name=$1
+    local arr_len=0
+    arr_len="$(eval 'printf %s ${#'"${arr_name}[@]}")"
+    if [ "${arr_len}" -lt 1 ] ; then
+      return 1
+    fi
+
+    local ii
     local item
-    for item in "${arr[@]}" ; do
-      if [ "${item,,}" = "$2" ] ; then
+    for ii in $(seq 0 "$((arr_len - 1))") ; do
+      item="$(eval 'printf %s ${'"${arr_name}[$ii]}")"
+      if [ "$(echo "$item" | tr '[:upper:]' '[:lower:]')" = "$2" ] ; then
         return 0
       fi
     done
@@ -140,7 +148,7 @@ if ! declare -F guess_swift_host_triplet >/dev/null ; then
   guess_swift_host_triplet() {
     local os
     os=$(basename "$(xcrun --toolchain swift  --show-sdk-platform-path)" '.platform')
-    os=${os,,*}
+    os="$(printf %s "$os" | tr '[:upper:]' '[:lower:]')"
     local version
     version=$(xcrun --toolchain swift  --show-sdk-version)
     local arch

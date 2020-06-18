@@ -23,7 +23,7 @@ pack_file() {
   local perm
   local os
   os=$(uname)
-  if [[ "${os,,?}" =~ darwin ]] ; then
+  if [[ "$(echo "$os" | tr '[A-Z]' '[a-z]')" =~ darwin ]] ; then
     perm=$(stat -f '%Lp' "$file")
   else
     perm=$(stat -f '%Lp' "$file" 2>/dev/null | stat --printf='%a' "$file")
@@ -157,7 +157,7 @@ cat <<"EOF"
 cwd=$(pwd)
 
 shellpack_loader_installed_path="${cwd}/shellpack_loader.sh"
-shellpack_loader_installed_path="${shellpack_loader_installed_path/${HOME}/'~'}"
+shellpack_loader_installed_path="${shellpack_loader_installed_path/${HOME}/~}"
 source_loader_line=". ${shellpack_loader_installed_path}"
 if ! grep "${source_loader_line}" "${HOME}/.bashrc" >/dev/null 2>&1 ; then
   echo "$source_loader_line" >>"${HOME}/.bashrc"
