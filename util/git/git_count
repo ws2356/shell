@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-declare -a args=("$@")
-if [ $# -lt 2 ] ; then
-  args+=('head')
+if [ "$#" -lt 1 ] ; then
+  exit
 fi
-set -- "${args[@]}"
 
-git diff --numstat "$@" | agg
+range="${1}..."
+if [ "$#" -lt 2 ] ; then
+  range+="head"
+else
+  range+="$2"
+fi
+
+git diff --numstat "$range" | agg
