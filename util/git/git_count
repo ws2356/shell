@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
-range="${1:-head~1}..."
+# 一个参数（无参数默认head）：指定commit的统计
+# 两个参数：range统计
+
+co_start=
+co_end=
 if [ "$#" -lt 2 ] ; then
-  range+="head"
+  co_end="${1:-head}"
+  co_start="${co_end}~1"
 else
-  range+="$2"
+  co_start="${1}"
+  co_end="${2}"
 fi
 
-git diff --numstat "$range" | agg
+git diff --numstat "${co_start}...${co_end}" | agg
