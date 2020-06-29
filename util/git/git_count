@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-if [ "$#" -lt 1 ] ; then
-  exit
-fi
-
-range="${1}..."
+range="${1:-head~1}..."
 if [ "$#" -lt 2 ] ; then
   range+="head"
 else
