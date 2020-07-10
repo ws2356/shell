@@ -3,12 +3,17 @@ set -eu
 
 which_remote=origin
 my_names=()
+is_list=false
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
       --remote)
       which_remote="$2"
       shift ; shift
+      ;;
+      --list|-l)
+      is_list=true
+      shift
       ;;
       *)
       my_names+=("$1")
@@ -59,6 +64,11 @@ for bb in "${branches[@]}"; do
   fi
   my_branches+=("$bb")
 done
+
+if $is_list ; then
+  echo "branches touched by me: ${my_branches[*]}"
+  exit
+fi
 
 git log --graph --oneline --decorate \
   --color --abbrev-commit \
