@@ -3,12 +3,22 @@ set -eu
 
 which_remote=origin
 commit=
+is_no_remote=false
+is_no_local=false
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
       --remote)
         which_remote="$2"
         shift ; shift
+        ;;
+      --no-remote)
+        is_no_remote=true
+        shift
+        ;;
+      --no-local)
+        is_no_local=true
+        shift
         ;;
       *)
         if [ -z "$commit" ] ; then
@@ -19,44 +29,34 @@ while [ "$#" -gt 0 ] ; do
   esac
 done
 
+if $is_no_local && $is_no_remote ; then
+  exit 0
+fi
+
 if [ -z "$commit" ] ; then
   commit='head'
 fi
 
-# locate git_dir
-git_dir_root=$(pwd)
-while ! [ -d "${git_dir_root}/.git" ] && [ "$git_dir_root" != / ] ; do
-  git_dir_root="$(dirname "$git_dir_root")"
-done
-
-git_dir="${git_dir_root}/.git"
-if ! [ -d "$git_dir" ] ; then
-  echo "Found no git repositary."
-  exit 1
-fi
-
-declare -a all_ref_ranges=()
-
-# get all branches
-git_ref_dir="${git_dir}/refs"
-heads_dir="${git_ref_dir}/heads"
-remote_dir="${git_ref_dir}/remotes"
 declare -a branches=()
 IFS_="$IFS"
 IFS=$'\n'
-branches+=($(cd "$heads_dir" && find * -type f))
-branches+=($(cd "$remote_dir" && find "$which_remote" -type f))
+if ! $is_no_local ; then
+  branches+=($(git for-each-ref --format '%(refname)' refs/heads))
+fi
+if ! $is_no_remote ; then
+  branches+=($(git for-each-ref --format '%(refname)' "refs/remotes/$which_remote"))
+fi
 IFS="$IFS_"
 
-
+declare -a all_ref_ranges=()
 for ref in "${branches[@]}" ; do
-  ref_name="$(printf "%s" "$ref" | sed -E "s|^${heads_dir}/||")"
-  check_relation_res="$(git log -1 "${ref_name}..${commit}")"
-  if [ -n "$check_relation_res" ] ; then
+  if ! git merge-base --is-ancestor "$commit" "$ref" ; then
     continue
   fi
-  all_ref_ranges+=("${commit}..${ref_name}")
+  all_ref_ranges+=("${commit}..${ref}")
 done
 
-git log --graph --oneline --decorate --color --abbrev-commit  --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' --date=format-local:'%Y-%m-%d %z %a' "$@" "${all_ref_ranges[@]}"
+git log --graph --oneline --decorate --color --abbrev-commit \
+  --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' \
+  --date=format-local:'%Y-%m-%d %z %a' "$@" "${all_ref_ranges[@]}"
 which_remote=origin
