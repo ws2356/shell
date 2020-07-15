@@ -1,22 +1,38 @@
 #!/usr/bin/env bash
 set -eu
+shopt -s extglob
 
 which_remote=origin
-my_names=()
 is_list=false
+is_no_merge=false
+declare -a my_names=()
+declare -a forward_args=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
       --remote)
-      which_remote="$2"
-      shift ; shift
-      ;;
+        which_remote="$2"
+        shift ; shift
+        ;;
       --list|-l)
-      is_list=true
-      shift
-      ;;
+        is_list=true
+        shift
+        ;;
+      --no-merge?(d))
+        is_no_merge=true
+        shift
+        ;;
+      --name|-n)
+        if [ "$#" -gt 1 ] ; then
+          my_names+=($(printf %s "$2" | tr ',' ' '))
+        else
+          echo "invalid arguments"
+          exit 1
+        fi
+        shift ; shift
+        ;;
       *)
-      my_names+=("$1")
+      forward_args+=("$1")
       shift
       ;;
   esac
@@ -62,11 +78,22 @@ for bb in "${branches[@]}"; do
   if ! is_me "$author" ; then
     continue
   fi
+  if $is_no_merge && ! [[ "$(git log -1 head.."$bb")" =~ [[:space:]]+ ]] ; then
+    continue
+  fi
   my_branches+=("$bb")
 done
 
 if $is_list ; then
-  echo "branches touched by me: ${my_branches[*]}"
+  if [ "${#my_branches[@]}" -eq 0 ] ; then
+    exit 0
+  fi
+  mention_no_merge=
+  if $is_no_merge ; then
+    mention_no_merge+="(that is not merged to head)"
+  fi
+  IFS=$'\n'
+  printf "branches touched by me%s:\n${my_branches[*]}\n" "${mention_no_merge}"
   exit
 fi
 
@@ -74,5 +101,6 @@ git log --graph --oneline --decorate \
   --color --abbrev-commit \
   --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' \
   --date=format-local:'%Y-%m-%d %z %a' \
+  "${forward_args[@]}" \
   "${my_branches[@]}"
 
