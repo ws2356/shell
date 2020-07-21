@@ -101,6 +101,6 @@ git log --graph --oneline --decorate \
   --color --abbrev-commit \
   --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cd) %C(bold blue)<%an>%Creset' \
   --date=format-local:'%Y-%m-%d %z %a' \
-  "${forward_args[@]}" \
+  "${forward_args[@]:+"${forward_args[@]}"}" \
   "${my_branches[@]}"
 
