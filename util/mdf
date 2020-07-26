@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+declare -a filename_patterns=()
+dir=
+verbose=false
+
+while [ "$#" -gt 0 ] ; do
+  case "$1" in
+    -v)
+      verbose=true
+      shift
+      ;;
+    -d)
+      dir="$2"
+      shift ; shift
+      ;;
+    *)
+      filename_patterns+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [ "${#filename_patterns}" -lt 1 ] ; then
+  printf "Usage:\n  %s [-d <dir>] <filename pattern>...\n" "$0"
+  exit 1
+fi
+
+declare -a args=()
+
+if [ -n "$dir" ] ; then
+  args+=("-onlyin" "$dir")
+fi
+
+query=
+for pat in "${filename_patterns[@]}" ; do
+  if [ -z "$query" ] ; then
+    query="kMDItemDisplayName == '${pat}'"
+  else
+    query+=" || kMDItemDisplayName == '${pat}'"
+  fi
+done
+args+=("$query")
+
+if $verbose ; then
+  set -x
+fi
+
+mdfind "${args[@]}"
