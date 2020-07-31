@@ -5,6 +5,7 @@ shopt -s extglob
 which_remote=origin
 is_list=false
 is_no_merge=false
+is_quiet=false
 declare -a my_names=()
 declare -a forward_args=()
 while [ "$#" -gt 0 ] ; do
@@ -16,6 +17,10 @@ while [ "$#" -gt 0 ] ; do
         ;;
       --list|-l)
         is_list=true
+        shift
+        ;;
+      --quiet|-q)
+        is_quiet=true
         shift
         ;;
       --no-merge?(d))
@@ -49,17 +54,6 @@ if ! [ -d "$git_dir" ] ; then
   exit 1
 fi
 
-# get all branches
-git_ref_dir="${git_dir}/refs"
-heads_dir="${git_ref_dir}/heads"
-remote_dir="${git_ref_dir}/remotes"
-declare -a branches=()
-IFS_="$IFS"
-IFS=$'\n'
-branches+=($(cd "$heads_dir" && find * -type f))
-branches+=($(cd "$remote_dir" && find "$which_remote" -type f))
-IFS="$IFS_"
-
 # 至少包含gitconfig里的名字
 my_names+=("$(git config --get user.name)")
 is_me() {
@@ -71,13 +65,34 @@ is_me() {
   return 1
 }
 
+# get all branches
+declare -a branches=()
+IFS_="$IFS"
+IFS=$'\n'
+get_refs() {
+  local sep=$'\x1e'
+  if [ "${#my_names[@]}" -lt 1 ] ; then
+    return
+  fi
+  local name_pattern=
+  for name in "${my_names[@]}" ; do
+    if [ -z "$name_pattern" ] ; then
+      name_pattern="${sep}${name}${sep}"
+    else
+      name_pattern+="|${sep}${name}${sep}"
+    fi
+  done
+  git for-each-ref --format="%(refname)${sep}%(authorname)${sep}%(committername)${sep}" \
+    refs/heads refs/tags "refs/remotes/$which_remote" | \
+    grep -E "$name_pattern" | \
+    awk -F "$sep" '{print $1}'
+}
+branches+=($(get_refs))
+IFS="$IFS_"
+
 # filter branches
 declare -a my_branches=()
 for bb in "${branches[@]}"; do
-  author="$(git show -s --pretty=format:'%an' "$bb")"
-  if ! is_me "$author" ; then
-    continue
-  fi
   if $is_no_merge && ! [[ "$(git log -1 head.."$bb")" =~ [[:space:]]+ ]] ; then
     continue
   fi
@@ -93,8 +108,17 @@ if $is_list ; then
     mention_no_merge+="(that is not merged to head)"
   fi
   IFS=$'\n'
-  printf "branches touched by me%s:\n${my_branches[*]}\n" "${mention_no_merge}"
+  if $is_quiet ; then
+    printf "${my_branches[*]}\n"
+  else
+    printf "branches touched by me%s:\n${my_branches[*]}\n" "${mention_no_merge}"
+  fi
   exit
+fi
+
+if [ "${#my_branches[@]}" -lt 1 ] ; then
+  echo "match no branch"
+  exit 0
 fi
 
 git log --graph --oneline --decorate \
