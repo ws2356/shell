@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -eu
+shopt -s extglob
+
+show_help() {
+  echo "$0 <-e|-d> <<uuids>...|-> # - means reading input from stdin"
+  exit 1
+}
+
+if [ $# -lt 2 ] ; then
+ show_help
+fi
+
+is_enc=
+if [ "$1" = "-e" ] ; then
+  is_enc=true
+elif [ "$1" = "-d" ] ; then
+  is_enc=false
+else
+ show_help
+fi
+shift
+
+is_stdin=
+if [ "$1" = "-" ] ; then
+  is_stdin=true
+  shift
+else
+  is_stdin=false
+fi
+
+do_dec() {
+  str=$1
+  printf '%s\n' "$str" | sed 's/-//g' |\
+    tr '[:upper:]' '[:lower:]'
+}
+
+do_enc() {
+  str=$1
+  printf '%s-%s-%s-%s-%s\n' "${str:0:8}" "${str:8:4}" \
+    "${str:12:4}" "${str:16:4}" "${str:20}" |\
+    tr '[:lower:]' '[:upper:]'
+}
+
+{
+  if $is_stdin ; then
+    cat
+  else
+    echo "$@"
+  fi
+} | {
+  xargs -n 1 echo
+} | {
+  while read -r ll ; do
+    if $is_enc ; then
+      do_enc "$ll"
+    else
+      do_dec "$ll"
+    fi
+  done
+}
