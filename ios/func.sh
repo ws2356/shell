@@ -100,22 +100,22 @@ else
 fi
 
 
-if ! declare -F __call_xcrun >/dev/null ; then
-  __call_xcrun() {
+if ! declare -F xcrunw >/dev/null ; then
+  xcrunw() {
     declare -a args=()
     if [ -n "${TOOLCHAIN:-}" ] ; then
       args+=("--toolchain" "$TOOLCHAIN")
     fi
     xcrun "${args[@]:+"${args[@]}"}" "$@"
   }
-  export -f __call_xcrun
+  export -f xcrunw
 else
-  echo "Duplicated func definition, ignoring: __call_xcrun @${BASH_SOURCE[0]}:${LINENO}"
+  echo "Duplicated func definition, ignoring: xcrunw @${BASH_SOURCE[0]}:${LINENO}"
 fi
 
 if ! declare -F get_sourcekit_path >/dev/null ; then
   get_sourcekit_path() {
-    __call_xcrun --find sourcekit-lsp
+    xcrunw --find sourcekit-lsp
   }
   export -f get_sourcekit_path
 else
@@ -126,7 +126,7 @@ fi
 
 if ! declare -F get_sdk_version >/dev/null ; then
   get_sdk_version() {
-    __call_xcrun -sdk "$SDK_NAME" -show-sdk-version
+    xcrunw -sdk "$SDK_NAME" -show-sdk-version
   }
   export -f get_sdk_version
 else
@@ -136,7 +136,7 @@ fi
 
 if ! declare -F get_sdk_path >/dev/null ; then
   get_sdk_path() {
-    __call_xcrun -sdk "$SDK_NAME" -show-sdk-path
+    xcrunw -sdk "$SDK_NAME" -show-sdk-path
   }
   export -f get_sdk_path
 else
@@ -211,7 +211,7 @@ if ! declare -F spmbuild >/dev/null ; then
     if $is_verbose ; then
       set -x
     fi
-    __call_xcrun swift build -Xswiftc -sdk -Xswiftc "$(get_sdk_path)" \
+    xcrunw swift build -Xswiftc -sdk -Xswiftc "$(get_sdk_path)" \
       -Xswiftc -target -Xswiftc "$(get_target_triplet)"
     if $is_verbose ; then
       set +x
