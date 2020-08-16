@@ -1,0 +1,71 @@
+{
+  "languageserver": {
+    "clangd": {
+      "enable": true,
+      "command": "xcrun --find clangd",
+      "args": ["-completion-style=detailed",
+        "-log=error",
+        "-pretty",
+        "-limit-results=100",
+        "-j=6",
+        "-pch-storage=disk",
+        "-resource-dir=xcrun clang -print-resource-dir"],
+        "rootPatterns": ["compile_flags.txt", "compile_commands.json", ".vim/", ".git/", ".hg/"],
+        "filetypes": ["c", "c++", "cc", "cpp", "objc", "objcpp"],
+        "trace.server": "verbose"
+    },
+    "swift": {
+      "enable": true,
+      "command": "xcrun --find sourcekit-lsp",
+      "args": [
+	"-Xswiftc",
+	"-sdk",
+	"-Xswiftc",
+	"get_sdk_path",
+	"-Xswiftc",
+	"-target",
+	"-Xswiftc",
+	"get_target_triplet"
+      ],
+      "rootPatterns": ["Package.swift", ".vim/", ".git/"],
+      "filetypes": ["c", "swift"],
+      "trace.server": "verbose"
+    },
+    "bash": {
+      "command": "( type bash-language-server || yarn global add bash-language-server ) 1>&2 && echo bash-language-server",
+      "args": ["start"],
+      "filetypes": ["sh"],
+      "ignoredRootPaths": ["~"]
+    },
+    "cmake": {
+      "command": "( type cmake-language-server || pip3 install cmake-language-server ) 1>&2 && echo cmake-language-server",
+      "filetypes": ["cmake"],
+      "rootPatterns": [
+        "build/"
+      ],
+      "initializationOptions": {
+        "buildDirectory": "build"
+      }
+    },
+    "dockerfile": {
+      "command": "( type docker-langserver || yarn global add dockerfile-language-server-nodejs ) 1>&2 && echo docker-langserver",
+      "filetypes": ["dockerfile"],
+      "args": ["--stdio"]
+    },
+    "sql": {
+      "command": "( type sql-language-server || yarn global add sql-language-server ) 1>&2 && echo sql-language-server",
+      "args" : ["up", "--method", "stdio"],
+      "filetypes": ["sql", "mysql"]
+    },
+    "graphql": {
+      "command": "( type graphql-lsp || yarn global add graphql graphql-config graphql-language-service-cli ) 1>&2 && echo graphql-lsp",
+      "args": ["server", "-m", "stream"],
+      "filetypes": ["graphql"],
+      "trace.server": "verbose"
+    }
+  },
+  "solargraph.useBundler": true,
+  "solargraph.trace.server": "verbose",
+  "solargraph.diagnostics": true,
+  "solargraph.logLevel": "debug"
+}

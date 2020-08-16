@@ -71,3 +71,49 @@ if ! declare -F fullpath >/dev/null ; then
 else
   echo "Duplicated func definition, ignoring: fullpath @${BASH_SOURCE[0]}:${LINENO}"
 fi
+
+
+if ! declare -F install_file >/dev/null ; then
+  install_file() {
+    local from_file=$1
+    if ! [[ "$from_file" =~ ^/ ]] ; then
+      from_file="$(pwd)/$from_file"
+    fi
+    local to_file=$2
+    mkdir -p "$(dirname "$to_file")"
+    backup_file "$to_file"
+    if ! ln -s "$from_file" "$to_file" ; then
+      echo "Failed to create symbolic link from $from_file to ${to_file}: maybe parent dir not exist or no permission to do so"
+    fi
+  }
+  export -f install_file
+else
+  echo "Duplicated func definition, ignoring: install_file @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+
+if ! declare -F backup_file >/dev/null ; then
+  backup_file() {
+    local ff=$1
+    if ! [ -e "$ff" ] ; then
+      return 0
+    fi
+
+    local backup_ff=${ff}.bak
+    if ! [ -f "$backup_ff" ] ; then
+      mv "$ff" "$backup_ff"
+      return 0
+    fi
+
+    local suffix=1
+    while [ -f "${backup_ff}.${suffix}" ] ; do
+      ((suffix++))
+    done
+
+    mv "$ff" "${backup_ff}.${suffix}"
+  }
+
+  export -f backup_file
+else
+  echo "Duplicated func definition, ignoring: backup_file @${BASH_SOURCE[0]}:${LINENO}"
+fi

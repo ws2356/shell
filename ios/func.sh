@@ -100,9 +100,18 @@ else
 fi
 
 
+__call_xcrun() {
+  declare -a args=()
+  if [ -n "${TOOLCHAIN:-}" ] ; then
+    args+=("--toolchain" "$TOOLCHAIN")
+  fi
+  xcrun "${args[@]:+"${args[@]}"}" "$@"
+}
+
+
 if ! declare -F get_sdk_version >/dev/null ; then
   get_sdk_version() {
-    xcrun -sdk "$SDK_NAME" -show-sdk-version
+    __call_xcrun -sdk "$SDK_NAME" -show-sdk-version
   }
   export -f get_sdk_version
 else
@@ -112,7 +121,7 @@ fi
 
 if ! declare -F get_sdk_path >/dev/null ; then
   get_sdk_path() {
-    xcrun -sdk "$SDK_NAME" -show-sdk-path
+    __call_xcrun -sdk "$SDK_NAME" -show-sdk-path
   }
   export -f get_sdk_path
 else
@@ -187,7 +196,7 @@ if ! declare -F spmbuild >/dev/null ; then
     if $is_verbose ; then
       set -x
     fi
-    xcrun swift build -Xswiftc -sdk -Xswiftc "$(get_sdk_path)" \
+    __call_xcrun swift build -Xswiftc -sdk -Xswiftc "$(get_sdk_path)" \
       -Xswiftc -target -Xswiftc "$(get_target_triplet)"
     if $is_verbose ; then
       set +x

@@ -18,7 +18,7 @@ default_install_dir=~/.config/shellpack/bin
 install_dir=${1:-$default_install_dir}
 
 [ -d build ] || mkdir build
-./shellpack core fs ios mobile osx env tool util >build/install.sh
+./shellpack core fs ios mobile osx env tool util coc >build/install.sh
 chmod +x build/install.sh
 
 [ -d "$install_dir" ] || mkdir -p "$install_dir"
