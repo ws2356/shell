@@ -88,7 +88,7 @@ fi
 # 传入部署版本，默认sdk版本
 if ! declare -F get_deploy_target_version >/dev/null ; then
   get_deploy_target_version() {
-    if [ -n "$DEPLOY_TARGET" ] ; then
+    if [ -n "${DEPLOY_TARGET:-}" ] ; then
       printf '%s' "$DEPLOY_TARGET"
     else
       get_sdk_version
@@ -166,6 +166,39 @@ if ! declare -F get_target_triplet >/dev/null ; then
 else
   echo "Duplicated func definition, ignoring: get_target_triplet @${BASH_SOURCE[0]}:${LINENO}"
 fi
+
+
+if ! declare -F spmbuild >/dev/null ; then
+  spmbuild() {
+    declare -r POSITIONAL=()
+    local is_verbose=false
+    while [ "$#" -gt 0 ] ; do
+      case "$1" in
+        -v|--verbose)
+            is_verbose=true
+            shift
+            ;;
+        *)
+          POSITIONAL+=("$1")
+            shift
+            ;;
+      esac
+    done
+    if $is_verbose ; then
+      set -x
+    fi
+    xcrun swift build -Xswiftc -sdk -Xswiftc "$(get_sdk_path)" \
+      -Xswiftc -target -Xswiftc "$(get_target_triplet)"
+    if $is_verbose ; then
+      set +x
+    fi
+  }
+  export -f spmbuild
+else
+  echo "Duplicated func definition, ignoring: spmbuild @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+
 
 if ! declare -F devget >/dev/null ; then
   devget() {
