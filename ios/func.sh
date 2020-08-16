@@ -113,6 +113,16 @@ else
   echo "Duplicated func definition, ignoring: __call_xcrun @${BASH_SOURCE[0]}:${LINENO}"
 fi
 
+if ! declare -F get_sourcekit_path >/dev/null ; then
+  get_sourcekit_path() {
+    __call_xcrun --find sourcekit-lsp
+  }
+  export -f get_sourcekit_path
+else
+  echo "Duplicated func definition, ignoring: get_sourcekit_path @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+
 
 if ! declare -F get_sdk_version >/dev/null ; then
   get_sdk_version() {

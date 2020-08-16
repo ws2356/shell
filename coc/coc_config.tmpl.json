@@ -16,7 +16,7 @@
     },
     "swift": {
       "enable": true,
-      "command": "xcrun --find sourcekit-lsp",
+      "command": "get_sourcekit_path",
       "args": [
 	"-Xswiftc",
 	"-sdk",
