@@ -100,13 +100,18 @@ else
 fi
 
 
-__call_xcrun() {
-  declare -a args=()
-  if [ -n "${TOOLCHAIN:-}" ] ; then
-    args+=("--toolchain" "$TOOLCHAIN")
-  fi
-  xcrun "${args[@]:+"${args[@]}"}" "$@"
-}
+if ! declare -F __call_xcrun >/dev/null ; then
+  __call_xcrun() {
+    declare -a args=()
+    if [ -n "${TOOLCHAIN:-}" ] ; then
+      args+=("--toolchain" "$TOOLCHAIN")
+    fi
+    xcrun "${args[@]:+"${args[@]}"}" "$@"
+  }
+  export -f __call_xcrun
+else
+  echo "Duplicated func definition, ignoring: __call_xcrun @${BASH_SOURCE[0]}:${LINENO}"
+fi
 
 
 if ! declare -F get_sdk_version >/dev/null ; then
