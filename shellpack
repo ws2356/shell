@@ -100,17 +100,13 @@ declare -a tree_list2
 for item in "${tree_list[@]}" ; do
   tree_list2+=("$(pwd)/$item")
 done
-IFS_=$IFS
-IFS=$'\n'
-tree_list_str="${tree_list2[*]}"
-IFS=$IFS_
+IFS=$'\n' tree_list_str="${tree_list2[*]}"
+unset IFS
 
 cat >shellpack_loader.sh <<EOFEOF
 declare -a _shellpack_tree_list
-IFS_=\$IFS
-IFS=$'\n'
-_shellpack_tree_list=($tree_list_str)
-IFS=\$IFS_
+IFS=$'\n' _shellpack_tree_list=($tree_list_str)
+unset IFS
 EOFEOF
 
 EOF

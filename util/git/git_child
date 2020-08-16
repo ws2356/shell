@@ -29,15 +29,14 @@ if [ -z "$commit" ] ; then
 fi
 
 declare -a branches=()
-IFS_="$IFS"
-IFS=$'\n'
 get_refs() {
   git for-each-ref --format="%(refname)" \
     --contains "$commit" \
     refs/heads refs/tags "refs/remotes/$which_remote"
 }
+IFS=$'\n'
 branches+=($(get_refs))
-IFS="$IFS_"
+unset IFS
 
 declare -a all_ref_ranges=()
 for ref in "${branches[@]}" ; do

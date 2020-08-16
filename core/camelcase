@@ -9,10 +9,10 @@ fi
 
 declare -a grand_ret=()
 for str in "${args[@]}" ; do
-  IFS='-_' read -r -a words <<<"$str"
+  IFS='-_' ; read -r -a words <<<"$str" ; unset IFS
   ret=''
   for wd in "${words[@]}" ; do
-    ret="${ret}${wd^?}"
+    ret="${ret}$(printf '%s' "${wd:0:1}" | tr '[:lower:]' '[:upper:]')${wd:1}"
   done
   grand_ret+=("$ret")
 done

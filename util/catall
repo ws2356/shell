@@ -2,4 +2,15 @@
 set -eu
 filename_glob=${1:-*.log}
 
-IFS_=$IFS ; IFS=$'\n' ; cat `find . -name "$filename_glob"` ; IFS=$IFS_ ;
+declare -a file_list=()
+file_list_raw="$(find . -name "$filename_glob")"
+{
+  while read -r line ; do
+    file_list+=("$line")
+  done
+} <<<"$file_list_raw"
+
+for ff in "${file_list[@]}" ; do
+  printf '/// file: %s\n\n' "$ff"
+  cat "$ff"
+done

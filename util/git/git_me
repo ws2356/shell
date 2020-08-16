@@ -67,8 +67,6 @@ is_me() {
 
 # get all branches
 declare -a branches=()
-IFS_="$IFS"
-IFS=$'\n'
 get_refs() {
   local sep=$'\x1e'
   if [ "${#my_names[@]}" -lt 1 ] ; then
@@ -87,8 +85,9 @@ get_refs() {
     grep -E "$name_pattern" | \
     awk -F "$sep" '{print $1}'
 }
+IFS=$'\n'
 branches+=($(get_refs))
-IFS="$IFS_"
+unset IFS
 
 # filter branches
 declare -a my_branches=()
@@ -113,6 +112,7 @@ if $is_list ; then
   else
     printf "branches touched by me%s:\n${my_branches[*]}\n" "${mention_no_merge}"
   fi
+  unset IFS
   exit
 fi
 

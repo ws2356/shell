@@ -13,7 +13,7 @@ else
   is_relative=true
 fi
 
-IFS='/' read -r -a components <<<"$p"
+IFS='/' read -r -a components <<<"$p" ; unset IFS
 
 declare -a stack=()
 for c in "${components[@]}" ; do
@@ -28,10 +28,7 @@ for c in "${components[@]}" ; do
   stack+=("$c")
 done
 
-IFS_=$IFS
-IFS='/'
-ret="${stack[*]}"
-IFS=$IFS_
+IFS='/' ret="${stack[*]}" ; unset IFS
 
 if $is_relative ; then
   echo "./$ret"
