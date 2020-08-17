@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -eu
+
+code=$(find '/Applications/Visual Studio Code.app' -name code -type f -print -quit)
+if [ -z "${code:-}" ] ; then
+  echo "Failed to location vscode command line"
+  exit 1
+fi
+
+"$code" "$@"
