@@ -194,13 +194,14 @@ fi
 
 if ! declare -F spmbuild >/dev/null ; then
   spmbuild() {
-    declare -r POSITIONAL=()
+    declare -a POSITIONAL=()
     local is_verbose=false
     while [ "$#" -gt 0 ] ; do
       case "$1" in
         -v|--verbose)
             is_verbose=true
             shift
+            break
             ;;
         *)
           POSITIONAL+=("$1")
@@ -208,11 +209,14 @@ if ! declare -F spmbuild >/dev/null ; then
             ;;
       esac
     done
+    if [ $# -gt 0 ] ; then
+      POSITIONAL+=("$@")
+    fi
     if $is_verbose ; then
       set -x
     fi
     xcrunw swift build -Xswiftc -sdk -Xswiftc "$(get_sdk_path)" \
-      -Xswiftc -target -Xswiftc "$(get_target_triplet)"
+      -Xswiftc -target -Xswiftc "$(get_target_triplet)" "${POSITIONAL[@]:+${POSITIONAL[@]}}"
     if $is_verbose ; then
       set +x
     fi
