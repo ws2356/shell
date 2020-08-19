@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+this_file="${BASH_SOURCE[0]}"
+if ! [ -e "$this_file" ] ; then
+  this_file="$(type -p "$this_file")"
+fi
+if ! [ -e "$this_file" ] ; then
+  echo "Failed to resolve file."
+  exit 1
+fi
+if ! [[ "$this_file" =~ ^/ ]] ; then
+  this_file="$(pwd)/$this_file"
+fi
+while [ -h "$this_file" ] ; do
+    ls_res="$(ls -ld "$this_file")"
+    link_target=$(expr "$ls_res" : '.*-> \(.*\)$')
+    if [[ "$link_target" =~ ^/ ]] ; then
+      this_file="$link_target"
+    else
+      this_file="$(dirname "$this_file")/$link_target"
+    fi
+done
+this_dir="$(dirname "$this_file")"
+
+declare -a pass_args=()
+
+if [ -n "${PGY_API_KEY:-}" ] ; then
+  pass_args+=("-k" "$PGY_API_KEY")
+fi
+
+if [ -n "${PGY_PASSWORD:-}" ] ; then
+  pass_args+=("-p" "$PGY_PASSWORD")
+fi
+
+pass_args+=("-t" 2 "--validity" 1 "-b" "$(date -v +1m '+%Y-%m-%d')" "-a" "$(date -v -1d '+%Y-%m-%d')")
+pass_args+=("$@")
+
+"${this_dir}/pgyw" "${pass_args[@]}"

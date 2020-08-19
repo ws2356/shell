@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# 脚本功能：调用蒲公英网站的rest api，发布ipa文件用于内部测试
+# 参考文档：https://www.pgyer.com/doc/view/api
+# 参数说明（选填还是必填，取决于蒲公英api，请参考蒲公英文档）：
+      # --api-key 蒲公英网站的api-key，目前可以免费注册使用
+      # --file ipa文件路径
+      # --install-type 参考官方文档
+      # --install-password 密码
+      # --install-timing 1设置安装有效期 2长期有效
+      # --install-after 安装有效期开始时间
+      # --install-before 安装有效期结束时间
+      # --release-log 更新日志
+
+set -e
+
+declare -a args=()
+while [ "$#" -gt 0 ] ; do
+  key="$1"
+  case $key in
+      -k|--api-key)
+      args+=('-F' "_api_key=$2")
+      shift ; shift
+      ;;
+      -f|--file)
+      args+=('-F' "file=@$2")
+      shift ; shift
+      ;;
+      -t|--install-type)
+      args+=('-F' "buildInstallType=$2")
+      shift ; shift
+      ;;
+      -p|--install-password)
+      args+=('-F' "buildPassword=$2")
+      shift ; shift
+      ;;
+      -v|--validity)
+      args+=('-F' "buildInstallDate=$2")
+      shift ; shift
+      ;;
+      -a|--install-after)
+      args+=('-F' "buildInstallStartDate=$2")
+      shift ; shift
+      ;;
+      -b|--install-before)
+      args+=('-F' "buildInstallEndDate=$2")
+      shift ; shift
+      ;;
+      -g|--release-log)
+      args+=('-F' "buildUpdateDescription=$2")
+      shift ; shift
+      ;;
+      *)
+      args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+set -x
+
+curl --http1.1 --verbose -X POST \
+  -H 'Content-Type:multipart/form-data' "${args[@]}" \
+  'https://www.pgyer.com/apiv2/app/upload'
