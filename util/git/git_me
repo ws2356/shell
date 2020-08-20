@@ -8,11 +8,16 @@ is_no_merge=false
 is_quiet=false
 declare -a my_names=()
 declare -a forward_args=()
+declare -a excepts=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
       --remote)
         which_remote="$2"
+        shift ; shift
+        ;;
+      --except)
+        excepts+=("$2")
         shift ; shift
         ;;
       --list|-l)
@@ -43,6 +48,7 @@ while [ "$#" -gt 0 ] ; do
   esac
 done
 
+
 # locate git_dir
 git_dir_root=$(pwd)
 while ! [ -d "${git_dir_root}/.git" ] && [ "$git_dir_root" != / ] ; do
@@ -56,13 +62,14 @@ fi
 
 # 至少包含gitconfig里的名字
 my_names+=("$(git config --get user.name)")
-is_me() {
-  for item in "${my_names[@]}"; do
-    if [ "$item" = "$1" ] ; then
-      return 0
-    fi
-  done
-  return 1
+
+filter_except_refs() {
+  if [ $# -eq 0 ] ; then
+    cat
+  fi
+  IFS='|' local pattern="$*"
+  unset IFS
+  grep -v -E "$pattern"
 }
 
 # get all branches
@@ -83,6 +90,7 @@ get_refs() {
   git for-each-ref --format="%(refname)${sep}%(authorname)${sep}%(committername)${sep}" \
     refs/heads refs/tags "refs/remotes/$which_remote" | \
     grep -E "$name_pattern" | \
+    filter_except_refs "${excepts[@]:+${excepts[@]}}" | \
     awk -F "$sep" '{print $1}'
 }
 IFS=$'\n'
@@ -91,7 +99,7 @@ unset IFS
 
 # filter branches
 declare -a my_branches=()
-for bb in "${branches[@]}"; do
+for bb in "${branches[@]:+${branches[@]}}"; do
   if $is_no_merge && ! [[ "$(git log -1 head.."$bb")" =~ [[:space:]]+ ]] ; then
     continue
   fi
