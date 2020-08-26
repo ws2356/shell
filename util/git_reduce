@@ -2,30 +2,47 @@
 
 set -eu
 
+# 执行前git fetch -p
+# todo: is_remote_tracked
+
 declare -a local_branches
 declare -a local_tags
 
 local_branches=($(git branch '--format=%(refname)' | sed 's;^refs/heads/;;'))
 local_tags=($(git tag -l))
 
+is_remote_tracked() {
+  local ref_name=
+  ref=$1
+  {
+    while read -r ref_name ; do
+      if [[ "$ref_name" =~ ^refs/remotes/ ]] ; then
+        return 0
+      fi
+    done
+  } < <(git for-each-ref '--format=%(refname)' "--points-at=$ref")
+
+  return 1
+}
+
 process_refs() {
   local is_tag=$1
   shift
-  local ref_name=
+  local ref_type=
   if $is_tag ; then
-    ref_name=tag
+    ref_type=tag
   else
-    ref_name=branch
+    ref_type=branch
   fi
 
   for ref in "$@" ; do
     child_info="$(git_child "$ref")"
-    if ! [[ "${child_info}" =~ [^[:space:]] ]] ; then
+    if ! [[ "${child_info}" =~ [^[:space:]] ]] && ! is_remote_tracked "$ref" ; then
       echo "Cannot safe delete ref($ref) because it's a leaf"
       continue
     fi
 
-    echo "Should proceed to delete $ref_name: ${ref}, y/n?"
+    echo "Should proceed to delete $ref_type: ${ref}, y/n?"
     read -r confirmation || continue
     if [ "$(echo "${confirmation:-}" | tr '[:upper:]' '[:lower:]')" != y ] ; then
       continue
