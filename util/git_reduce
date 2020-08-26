@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -eu
+
+declare -a local_branches
+declare -a local_tags
+
+local_branches=($(git branch '--format=%(refname)' | sed 's;^refs/heads/;;'))
+local_tags=($(git tag -l))
+
+process_refs() {
+  local is_tag=$1
+  shift
+  local ref_name=
+  if $is_tag ; then
+    ref_name=tag
+  else
+    ref_name=branch
+  fi
+
+  for ref in "$@" ; do
+    child_info="$(git_child "$ref")"
+    if ! [[ "${child_info}" =~ [^[:space:]] ]] ; then
+      echo "Cannot safe delete ref($ref) because it's a leaf"
+      continue
+    fi
+
+    echo "Should proceed to delete $ref_name: ${ref}, y/n?"
+    read -r confirmation || continue
+    if [ "$(echo "${confirmation:-}" | tr '[:upper:]' '[:lower:]')" != y ] ; then
+      continue
+    fi
+
+    if $is_tag ; then
+      git tag -d "$ref"
+    else
+      git branch -D "$ref"
+    fi
+  done
+}
+
+process_refs 'false' "${local_branches[@]:+${local_branches[@]}}"
+process_refs 'true' "${local_tags[@]:+${local_tags[@]}}"
