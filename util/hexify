@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -eu
+
+process_text() {
+  while read -r line ; do
+    while [[ "$line" =~ (^|[[:punct:]]|[[:blank:]])([[:digit:]]+)([[:punct:]]|[[:blank:]]|$) ]] ; do
+      num=${BASH_REMATCH[2]}
+      num_hex="$(printf '%x' "$num")"
+      line="$(echo "$line" | sed -E 's/(^|[[:punct:]]|[[:blank:]])([[:digit:]]+)([[:punct:]]|[[:blank:]]|$)/\1'"0x${num_hex}"'\3/')"
+    done
+    echo "$line"
+  done
+}
+
+if [ "$#" -le 0 ] ; then
+  process_text
+else
+  {
+    process_text
+  } <<< "${*}"
+fi
