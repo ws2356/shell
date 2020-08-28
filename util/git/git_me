@@ -51,11 +51,11 @@ done
 
 # locate git_dir
 git_dir_root=$(pwd)
-while ! [ -d "${git_dir_root}/.git" ] && [ "$git_dir_root" != / ] ; do
+while ! [ -e "${git_dir_root}/.git" ] && [ "$git_dir_root" != / ] ; do
   git_dir_root="$(dirname "$git_dir_root")"
 done
 git_dir="${git_dir_root}/.git"
-if ! [ -d "$git_dir" ] ; then
+if ! [ -e "$git_dir" ] ; then
   echo "Found no git repositary."
   exit 1
 fi
