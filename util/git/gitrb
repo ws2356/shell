@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -eu
+
+ref=${1:-}
+git rev-parse --abbrev-ref "${ref}@{upstream}"
