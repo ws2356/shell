@@ -36,7 +36,7 @@ process_refs() {
   fi
 
   for ref in "$@" ; do
-    child_info="$(git_child "$ref")"
+    child_info="$(gitchild "$ref")"
     if ! [[ "${child_info}" =~ [^[:space:]] ]] && ! is_remote_tracked "$ref" ; then
       echo "Cannot safe delete ref($ref) because it's a leaf"
       continue
