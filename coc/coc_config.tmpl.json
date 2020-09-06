@@ -67,5 +67,7 @@
   "solargraph.useBundler": true,
   "solargraph.trace.server": "verbose",
   "solargraph.diagnostics": true,
-  "solargraph.logLevel": "debug"
+  "solargraph.logLevel": "debug",
+  "python.setLinter": "pylint",
+  "python.setInterpreter": "test -n ${VIRTUAL_ENV:-} && echo $_ || type -p python3"
 }

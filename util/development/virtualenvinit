@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -eu
+
+virtualenv_home=
+
+while [ "$#" -gt 0 ] ; do
+  case "$1" in
+    -h|--home)
+      virtualenv_home="$2"
+        shift ; shift
+        ;;
+    *)
+        shift
+        ;;
+  esac
+done
+
+# 缺省安装在~/.virtualenv
+virtualenv_home="${virtualenv_home:-${HOME}/.virtualenv}"
+virtualenv_py3_dir="${virtualenv_home}/python3"
+
+if [ ! -d "${virtualenv_home}" ] ; then
+  mkdir "${virtualenv_home}"
+fi
+
+if [ ! -x "${virtualenv_py3_dir}/bin/python" ] ;then
+  virtualenv -p python3 "$virtualenv_py3_dir"
+fi
+
+# shellcheck source=/dev/null
+. "${virtualenv_py3_dir}/bin/activate"
+
+reqfile=requirements.txt
+test -e "${reqfile}" || touch "$_"
+
+if [ -r "${reqfile}" ] ; then
+  grep -E '^[[:space:]]+pylint' "${reqfile}" >/dev/null \
+    || echo 'pylint' >>"$_"
+  pip3 install -r "${reqfile}"
+fi
