@@ -27,17 +27,17 @@ coc_config_output="${HOME}/.my_coc_config.json"
 
 {
   while read -r line ; do
-    if ! [[ "$line" =~ (.+) ]] ; then
+    if ! [[ "$line" =~ (.*)(.+)(.*) ]] ; then
       echo "$line"
       continue
     fi
-    placeholder_cmd="${BASH_REMATCH[1]}"
+    placeholder_cmd="${BASH_REMATCH[2]:-}"
     if [ -z "$placeholder_cmd" ] ; then
       echo "$line"
       continue
     fi
     replaced=$(eval "$placeholder_cmd" || true)
-    echo "${line/$placeholder_cmd/$replaced}"
+    echo "${BASH_REMATCH[1]:-}${replaced}${BASH_REMATCH[3]:-}"
   done
 } <"$coc_config_tmpl_file" | jq  >"$coc_config_output"
 

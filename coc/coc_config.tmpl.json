@@ -69,5 +69,5 @@
   "solargraph.diagnostics": true,
   "solargraph.logLevel": "debug",
   "python.setLinter": "pylint",
-  "python.setInterpreter": "test -n ${VIRTUAL_ENV:-} && echo $_ || type -p python3"
+  "python.setInterpreter": "test -n "${VIRTUAL_ENV:-}" && echo $_ || type -p python3"
 }
