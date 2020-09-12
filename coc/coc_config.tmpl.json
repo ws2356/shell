@@ -69,5 +69,6 @@
   "solargraph.diagnostics": true,
   "solargraph.logLevel": "debug",
   "python.setLinter": "pylint",
-  "python.setInterpreter": "test -n "${VIRTUAL_ENV:-}" && echo $_ || type -p python3"
+  "python.setInterpreter": "test -n "${VIRTUAL_ENV:-}" && echo $_ || type -p python3",
+  "tsserver.npm": "PATH=$(echo "$PATH" | sed 's;[^:]\{0,\}/.nvm/[^:]\{0,\};;g' | sed 's/::/:/g' | sed 's/^:\{1,\}|:\{1,\}$//g') type -p npm"
 }
