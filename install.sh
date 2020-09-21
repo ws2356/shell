@@ -43,7 +43,7 @@ source_list="$(find "${install_dir%%/}" -name func.sh)"
 echo "# paste follow shell code at the end of your .bashrc(recommended) or .bash_profile"
 cat <<EOF
 shell_pack_loader() {
-  IFS=\$'\\n'
+  local IFS=\$'\\n'
   local -a search_dirs=($search_dirs)
   unset IFS
   for subdir in "\${search_dirs[@]}" ; do
@@ -54,7 +54,7 @@ shell_pack_loader() {
     fi
   done
 
-  IFS=\$'\\n'
+  local IFS=\$'\\n'
   local -a source_list=($source_list)
   unset IFS
   for func in "\${source_list[@]}" ; do
