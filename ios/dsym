@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+DEVELOPER_DIR=$(xcode-select -p)
+
+prog="$(find "$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer/iOSSupport/Library" \
+  -name symbolicatecrash -type f -print -quit)"
+
+export DEVELOPER_DIR
+
+"${prog}" "$@"
