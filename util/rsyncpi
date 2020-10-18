@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+remote_addr=rsync://pi@pihome.local:1873
+
+declare -a local_dirs=(\
+  "${HOME}/Dropbox/" \
+  "${HOME}/Desktop/" \
+  "${HOME}/Downloads/" \
+  "${HOME}/local-only/")
+
+declare -a remote_mod=(\
+  dropbox \
+  mac.desktop \
+  mac.download \
+  local-only)
+
+total=${#local_dirs[@]}
+
+for ii in $(seq 0 "$((total - 1))") ; do
+  dir=${local_dirs[ii]}
+  mod=${remote_mod[ii]}
+  rsync -acvz \
+    '--exclude=.DS_Store' \
+    '--exclude=*.mp4' \
+    '--exclude=*.avi' \
+    "$dir" \
+    "${remote_addr}/$mod"
+done
