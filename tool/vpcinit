@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+sudo apt-get update
+
+sudo apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+verify_out="$(sudo apt-key fingerprint 0EBFCD88)"
+
+verify_pat='9DC8[[:blank:]]\{1,\}5822[[:blank:]]\{1,\}9FC7[[:blank:]]\{1,\}DD38[[:blank:]]\{1,\}854A[[:blank:]]\{1,\}E2D8[[:blank:]]\{1,\}8D81[[:blank:]]\{1,\}803C[[:blank:]]\{1,\}0EBF[[:blank:]]\{1,\}CD88'
+if ! echo "$verify_out" | grep -e "$verify_pat" ; then
+  echo "Failed to verify: you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88"
+  exit 1
+fi
+
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+
+sudo groupadd docker || true
+sudo usermod -aG docker $USER || true
+sudo systemctl enable docker
