@@ -9,6 +9,7 @@ is_quiet=false
 declare -a my_names=()
 declare -a forward_args=()
 declare -a excepts=()
+declare -a include=()
 while [ "$#" -gt 0 ] ; do
   key="$1"
   case $key in
@@ -39,6 +40,13 @@ while [ "$#" -gt 0 ] ; do
           echo "invalid arguments"
           exit 1
         fi
+        shift ; shift
+        ;;
+      --include|-i)
+        IFS=,
+        read -r -a include_tmp <<<"$2"
+        unset IFS
+        include+=("${include_tmp[@]}")
         shift ; shift
         ;;
       *)
@@ -95,6 +103,7 @@ get_refs() {
 }
 IFS=$'\n'
 branches+=($(get_refs))
+branches+=("${include[@]}")
 unset IFS
 
 # filter branches
