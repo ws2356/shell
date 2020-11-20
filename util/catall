@@ -1,16 +1,35 @@
 #!/usr/bin/env bash
 set -eu
-filename_glob=${1:-*.log}
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
 
-declare -a file_list=()
-file_list_raw="$(find . -name "$filename_glob")"
-{
-  while read -r line ; do
-    file_list+=("$line")
-  done
-} <<<"$file_list_raw"
+declare -a suffix=()
+if [ $# -gt 0 ] ; then
+  suffix+=("$@")
+else
+  suffix+=('log')
+fi
 
-for ff in "${file_list[@]}" ; do
-  printf '/// file: %s\n\n' "$ff"
-  cat "$ff"
+list=
+for suf in "${suffix[@]}" ; do
+  if [ -z "$list" ] ; then
+    list="$suf"
+  else
+    list="${list},$suf"
+  fi
 done
+
+if [ "${#suffix[@]}" -gt 1 ] ; then
+  eval "cat ./**/*.{$list}"
+else
+  eval "cat ./**/*.$list"
+fi
