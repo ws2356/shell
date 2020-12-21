@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+showhelp() {
+  echo "Usage: $0 <dhcp> | <ip>"
+}
+
+if [ $# -lt 1 ] ; then
+  showhelp
+  exit 1
+fi
+
+if [ $# -eq 1 ] && [ "$1" = 'dhcp' ] ; then
+  networksetup -setdhcp Wi-Fi
+  exit
+fi
+
+if ! [[ "$1" =~ ([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]+ ]] ; then
+  showhelp
+  exit 1
+fi
+
+default_router="${BASH_REMATCH[1]}.1"
+
+IP="$1"
+if [ $# -ge 2 ] ; then
+  MASK="$2"
+else
+  MASK="255.255.255.0"
+fi
+if [ $# -ge 3 ] ; then
+  ROUTER="$3"
+else
+  ROUTER="$default_router"
+fi
+
+networksetup -setmanual Wi-Fi "$IP" "$MASK" "$ROUTER"
