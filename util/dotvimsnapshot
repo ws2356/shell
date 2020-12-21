@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+myvim="${1:-${HOME}/.vim}"
+liblist=()
+maxlen=0
+for lib in "${myvim}"/plugged/* ; do
+  liblist+=("$lib")
+  name="$(basename "$lib")"
+  if [ "${#name}" -gt "$maxlen" ] ; then
+    maxlen="${#name}"
+  fi
+done
+
+for lib in "${liblist[@]}" ; do
+  name="$(basename "$lib")"
+  commithash="$(cd "$lib" && git rev-parse @)"
+  printf '%'"$maxlen"'s: %s\n' "$name" "$commithash"
+done
