@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -eu
+
+filter_cmd=$1
+shift
+
+process_text() {
+  local nonnum=
+  local num=
+  local matched=
+  local matched_len=
+  local filtered_line=
+  while read -r line ; do
+    filtered_line=
+    input="$line"
+    while [[ "$input" =~ ^([^[:digit:]]*)([[:digit:]]+(.[[:digit:]]+)?) ]] ; do
+      nonnum=${BASH_REMATCH[1]}
+      num=${BASH_REMATCH[2]}
+      matched="${nonnum}${num}"
+      matched_len="${#matched}"
+      input="${input:matched_len}"
+      filtered_line+="${nonnum}$(printf '%s' "$num" | eval "$filter_cmd")"
+    done
+    filtered_line+="$input"
+    echo "$filtered_line"
+  done
+}
+
+if [ "$#" -le 0 ] ; then
+  process_text
+else
+  {
+    process_text
+  } <<< "${*}"
+fi
