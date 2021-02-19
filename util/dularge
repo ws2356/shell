@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+filelist=("$@")
+
+du -sh "${filelist[@]}" | \
+  sed -n -E '/^([[:digit:]]{3}M|[[:digit:]]+(\.[[:digit:]]+)?G)/p'
