@@ -113,6 +113,7 @@ install_essentials() {
   brew_install xmlstarlet
   brew_install ripgrep
   brew_install fzf
+  brew_install blueutil
   has_brew ctags || brew install --HEAD universal-ctags/universal-ctags/universal-ctags
   # bash-completion
   if ! has_brew bash-completion ; then

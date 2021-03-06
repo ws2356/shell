@@ -46,7 +46,7 @@ while [ "$#" -gt 0 ] ; do
         IFS=,
         read -r -a include_tmp <<<"$2"
         unset IFS
-        include+=("${include_tmp[@]}")
+        include+=("${include_tmp[@]:+include_tmp[@]}")
         shift ; shift
         ;;
       *)
@@ -103,7 +103,9 @@ get_refs() {
 }
 IFS=$'\n'
 branches+=($(get_refs))
-branches+=("${include[@]}")
+if [ "${#include[@]}" -gt 0 ] ; then
+  branches+=("${include[@]}")
+fi
 unset IFS
 
 # filter branches

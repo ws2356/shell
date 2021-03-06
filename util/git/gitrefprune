@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -eu
+
+is_interactive=false
+while [ "$#" -gt 0 ] ; do
+  case "$1" in
+    -i)
+      is_interactive=true
+      shift
+      ;;
+    *)
+      exit 1
+      shift
+      ;;
+  esac
+done
+
+ttyname=/dev/$(ps -p "$$" -o tty | sed -n '$p' | sed 's/[[:space:]]\{1,\}$//')
+declare -r ttyname
+
+delete_local_branches_at() {
+  local commitid=$1
+  if [ -z "$commitid" ] ; then
+    return
+  fi
+  {
+    if ! $is_interactive ; then
+      echo "Deleting local branches at $commitid"
+    fi
+    while read -r refname ; do
+      if ! [[ "$refname" =~ ^refs/heads/ ]] ; then
+        continue
+      fi
+      name="${refname:11}"
+      if $is_interactive ; then
+        echo "Confirm delete $commitid ${name}?"
+        {
+          select confirm in ok skip ; do
+            if [ "$confirm" = "ok" ] ; then
+              git branch -D "$name" || true
+              break
+            elif [ "$confirm" = "skip" ] ; then
+              break
+            fi
+          done
+        } 0<"$ttyname"
+      else
+        git branch -D "$name" || true
+      fi
+
+    done
+  } < <(git for-each-ref --format '%(refname)' --points-at "$commitid" refs/heads)
+}
+
+scope=refs/heads
+{
+  while read -r commitid ; do
+    parent_refs="$(git for-each-ref --format '%(objectname)' --contains "$commitid" | sort | uniq)"
+    if [ "$parent_refs" = "$commitid" ] ; then
+      continue
+    fi
+    delete_local_branches_at "$commitid"
+  done
+} < <(git for-each-ref --format '%(objectname)' "$scope")
