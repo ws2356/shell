@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -eu
+
+problem_name="$1"
+
+if [ -d "$problem_name" ] ; then
+  echo "Already exists"
+  exit 1
+fi
+
+mkdir "$problem_name"
+
+problem_name_norm="$(printf '%s' "$problem_name" | sed -E 's/[[:space:]]|-/_/g')"
+source_file="${problem_name}/${problem_name_norm}.cc"
+cmake_list_file="${problem_name}/CMakeLists.txt"
+
+cat >"$source_file" <<'EOF'
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#include <unordered_map>
+#include <set>
+#include <utility>
+#include <memory>
+
+using namespace std;
+
+
+int main(int argc, char *argv[]) {
+  return 0;
+}
+EOF
+
+cat >"$cmake_list_file" <<EOF
+cmake_minimum_required(VERSION 3.13)
+
+project($problem_name_norm)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+
+set(SOURCE_FILES $problem_name_norm)
+
+add_library($problem_name_norm
+  SHARED
+  STATIC
+  \${SOURCE_FILES}
+)
+
+EOF
+
+(cd "$problem_name" && cmake -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+
+vim '+/int main' \
+'+noh' \
+'+normal 2k' \
+'+set paste' \
+'+normal "+p' \
+'+set nopaste' \
+"$source_file"
