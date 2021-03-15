@@ -12,20 +12,22 @@ if ! shopt -s nullglob globstar ; then
   exit 1
 fi
 
+name="$(basename "$0")"
+
 # git add -u|-p
 git_add_args=()
-if [[ "$0" =~ u ]] ; then
+if [[ "$name" =~ u ]] ; then
   git_add_args+=('-u')
-elif [[ "$0" =~ p ]] ; then
+elif [[ "$name" =~ p ]] ; then
   git_add_args+=('-p')
-elif [[ "$0" =~ i ]] ; then
+elif [[ "$name" =~ i ]] ; then
   git_add_args+=('-i')
 fi
 git add "${git_add_args[@]}"
 
 # git commit -a
 git_commit_args=()
-if [[ "$0" =~ a ]] ; then
+if [[ "$name" =~ a ]] ; then
   git_commit_args+=('--amend')
 fi
 git commit "${git_commit_args[@]}" "$@"
