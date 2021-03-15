@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -eu
+if ! shopt -s nullglob globstar ; then
+  os_name="$(uname | tr '[:upper:]' '[:lower:]')"
+  if [ "$os_name" = "darwin" ] ; then
+    brew install bash
+  elif [ "$os_name" = "linux" ] ; then
+    sudo apt install bash
+  else
+    printf 'Very ancient version of bash detected. Go update it.\n'
+  fi
+  exit 1
+fi
+
+# git add -u|-p
+git_add_args=()
+if [[ "$0" =~ u ]] ; then
+  git_add_args+=('-u')
+elif [[ "$0" =~ p ]] ; then
+  git_add_args+=('-p')
+elif [[ "$0" =~ i ]] ; then
+  git_add_args+=('-i')
+fi
+git add "${git_add_args[@]}"
+
+# git commit -a
+git_commit_args=()
+if [[ "$0" =~ a ]] ; then
+  git_commit_args+=('-a')
+fi
+git commit "${git_commit_args[@]}" "$@"
