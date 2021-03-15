@@ -26,6 +26,6 @@ git add "${git_add_args[@]}"
 # git commit -a
 git_commit_args=()
 if [[ "$0" =~ a ]] ; then
-  git_commit_args+=('-a')
+  git_commit_args+=('--amend')
 fi
 git commit "${git_commit_args[@]}" "$@"
