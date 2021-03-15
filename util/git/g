@@ -23,7 +23,9 @@ elif [[ "$name" =~ p ]] ; then
 elif [[ "$name" =~ i ]] ; then
   git_add_args+=('-i')
 fi
-git add "${git_add_args[@]}"
+if [ "${#git_add_args[@]}" -gt 0 ] ; then
+  git add "${git_add_args[@]}"
+fi
 
 # git commit -a
 git_commit_args=()
