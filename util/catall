@@ -19,17 +19,37 @@ else
   suffix+=('log')
 fi
 
-list=
+suf_list=
 for suf in "${suffix[@]}" ; do
-  if [ -z "$list" ] ; then
-    list="$suf"
+  if [ -z "$suf_list" ] ; then
+    suf_list="$suf"
   else
-    list="${list},$suf"
+    suf_list="${suf_list},$suf"
   fi
 done
 
+loginfo() {
+  echo "$*"
+}
+
+process_files() {
+  local file_id=0
+  for ff in "${@}" ; do
+    if [ -d "$ff" ] ; then
+      continue
+    fi
+    ((file_id += 1))
+    if [ "$file_id" -gt 1 ] ; then
+      echo $'\n\n================================'
+    fi
+    loginfo "Log file #$file_id: $ff"
+    cat "$ff"
+  done
+}
+
 if [ "${#suffix[@]}" -gt 1 ] ; then
-  eval "cat ./**/*.{$list}"
+  suf_comma_list="$(echo "${suf_list[*]}" | tr ' ' ',')"
+  eval "process_files ./**/*.{$suf_comma_list}"
 else
-  eval "cat ./**/*.$list"
+  eval "process_files ./**/*.$suf_list"
 fi
