@@ -115,6 +115,8 @@ install_essentials() {
   brew_install fzf
   brew_install blueutil
   has_brew ctags || brew install --HEAD universal-ctags/universal-ctags/universal-ctags
+  brew_install mas
+  # mas install 1221250572, 容易出错
   # bash-completion
   if ! has_brew bash-completion ; then
     brew install bash-completion && \
