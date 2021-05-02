@@ -44,6 +44,8 @@ project($problem_name_norm)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 
+set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES \${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
+
 set(SOURCE_FILES $problem_name_norm)
 
 add_library($problem_name_norm
