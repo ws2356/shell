@@ -32,9 +32,36 @@ fi
 rm -rf "$install_dir" 2>/dev/null || true
 mkdir -p "$install_dir"
 
+copydir() {
+  local source_dir="$1"
+  local name=
+  name="$(basename "$source_dir")"
+  local dest_path=
+  dest_path="$2/$name"
+  mkdir -p "$dest_path"
+  local item=
+  local old_glob_ignore="${GLOBIGNORE:-}"
+  GLOBIGNORE=.
+  for item in "$source_dir"/*; do
+    if [[ "$item" =~ /.git$ ]] ; then
+      continue
+    fi
+    if [ -d "$item" ] ; then
+      copydir "$item" "$dest_path"
+    else
+      cp "$item" "$dest_path"
+    fi
+  done
+  if [ -z "$old_glob_ignore" ] ;  then
+    unset GLOBIGNORE
+  else
+    GLOBIGNORE="$old_glob_ignore"
+  fi
+}
+
 declare -a trees=(core fs ios mobile osx env tool util coc)
 for tree in "${trees[@]}" ; do
-  cp -a "${tree%%/*}" "$install_dir"
+  copydir "${tree%%/*}" "$install_dir"
 done
 
 search_dirs="$(find "${install_dir%%/}" -type d)"
