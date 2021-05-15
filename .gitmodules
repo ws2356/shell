@@ -1,0 +1,3 @@
+[submodule "util/x509tools"]
+	path = util/x509tools
+	url = https://github.com/ws2356/x509tools.git
