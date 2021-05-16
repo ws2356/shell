@@ -2,11 +2,11 @@
 set -e
 
 history_file=.simdo.hist
-if [ -n "$SHELLPACK_HOME" ] ; then
-  history_file="${SHELLPACK_HOME}/$history_file"
+if [ -n "$SHELLKIT_HOME" ] ; then
+  history_file="${SHELLKIT_HOME}/$history_file"
 fi
 
-declare -a pass_args_shellpack_lru_entry=(\
+declare -a pass_args_lru_entry=(\
   '--name' 'simdo-entry' \
   '--session-file' "$history_file" \
 )
@@ -18,7 +18,7 @@ trim_entry() {
     sed '/^$/ d'
 }
 
-entry=$(shellpack_lru_entry "${pass_args_shellpack_lru_entry[@]}")
+entry=$(lru_entry "${pass_args_lru_entry[@]}")
 rc=$?
 if [ "$rc" -eq 2 ] ; then
   exit

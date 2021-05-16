@@ -2,8 +2,8 @@
 set -e
 
 history_file=.colorcat.hist
-if [ -n "$SHELLPACK_HOME" ] ; then
-  history_file="${SHELLPACK_HOME}/$history_file"
+if [ -n "$SHELLKIT_HOME" ] ; then
+  history_file="${SHELLKIT_HOME}/$history_file"
 fi
 
 declare -a pass_args_cat=()
@@ -55,8 +55,8 @@ used_sed() {
 }
 
 if [ -z "$selected_entry" ] ; then
-  selected_entry=$(shellpack_lru_entry "${pass_args_color[@]}")
-  # shellpack_lru_entry返回2表示完成了编辑
+  selected_entry=$(lru_entry "${pass_args_color[@]}")
+  # lru_entry返回2表示完成了编辑
   if [ "$?" -eq 2 ] ; then
     exit
   fi

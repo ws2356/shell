@@ -2,15 +2,15 @@
 set -e
 
 history_file=.simlog.hist
-if [ -n "$SHELLPACK_HOME" ] ; then
-  history_file="${SHELLPACK_HOME}/$history_file"
+if [ -n "$SHELLKIT_HOME" ] ; then
+  history_file="${SHELLKIT_HOME}/$history_file"
 fi
 
 declare -a pass_args_log=()
 # colorcat ignores any entry line that does not match 'color: xxx' and 're|bre: xxx';
 # that makes it possible for us to use a single session file to store both predicate and colorcat entry
 # that is simlog entry
-declare -a pass_args_shellpack_lru_entry=(\
+declare -a pass_args_lru_entry=(\
   '--name' 'simlog-entry' \
   '--session-file' "$history_file" \
 )
@@ -33,7 +33,7 @@ while [ "$#" -gt 0 ] ; do
             pass_args_log+=("$key")
           fi
         else
-          pass_args_shellpack_lru_entry+=("$key")
+          pass_args_lru_entry+=("$key")
         fi
         shift
         ;;
@@ -47,7 +47,7 @@ trim_entry() {
     sed '/^$/ d'
 }
 
-entry=$(shellpack_lru_entry "${pass_args_shellpack_lru_entry[@]}")
+entry=$(lru_entry "${pass_args_lru_entry[@]}")
 rc=$?
 if [ "$rc" -eq 2 ] ; then
   exit

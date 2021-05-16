@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-if ! declare -F shellpack_lru_entry >/dev/null ; then
-  shellpack_lru_entry() {
+if ! declare -F lru_entry >/dev/null ; then
+  lru_entry() {
     local LRU_MAX=10
-    # [Optional] Default: entry. You may want to use your own concept by passing: --name <name of whatever you want shellpack_lru_entry to manage for you>.
+    # [Optional] Default: entry. You may want to use your own concept by passing: --name <name of whatever you want lru_entry to manage for you>.
     local name=
     # [Optional] The prompt text when displaying bash select menu for use to choose from.
     local select_prompt=
@@ -81,7 +81,7 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
     # session file format
     # 1. entry
     # ============
-    # what ever so long as no including  aka $'\E', which is used as delimer
+    # what ever so long as no including (typing: c-v x1b) aka $'\E', which is used as delimer
     # ------------
     # 2. delimer
     # 
@@ -136,7 +136,7 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
 
     if [ -n "$loaded_entry" ] ; then
       {
-        while read -r -d '' line ; do
+        while read -r -d '' line ; do # TODO: wansong, last line!
           if [[ "$line" =~ ^[[:space:]]*$ ]] ; then
             continue
           fi
@@ -198,7 +198,7 @@ if ! declare -F shellpack_lru_entry >/dev/null ; then
 
     printf '%s' "${selected_entry}"
   }
-  export -f shellpack_lru_entry
+  export -f lru_entry
 else
-  echo "Duplicated func definition, ignoring: shellpack_lru_entry @${BASH_SOURCE[0]}:${LINENO}"
+  echo "Duplicated func definition, ignoring: lru_entry @${BASH_SOURCE[0]}:${LINENO}"
 fi

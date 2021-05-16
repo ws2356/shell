@@ -17,7 +17,7 @@ while [ "$#" -gt 0 ] ; do
 done
 
 
-export install_dir=${HOME}/.config/shellpack/bin
+export install_dir=${HOME}/.config/shellkit
 # 覆盖提示
 old_contents="$(ls -l "$install_dir" 2>/dev/null || true)"
 if [ "$old_contents" != "" ] && ! $is_force ; then
@@ -70,6 +70,7 @@ source_list="$(find "${install_dir%%/}" -name func.sh)"
 echo "# paste follow shell code at the end of your .bashrc(recommended) or .bash_profile"
 cat <<EOF
 shell_pack_loader() {
+  export SHELLKIT_HOME="$install_dir"
   local IFS=\$'\\n'
   local -a search_dirs=($search_dirs)
   unset IFS
