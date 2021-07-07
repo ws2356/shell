@@ -48,15 +48,13 @@ set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES \${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTO
 
 set(SOURCE_FILES $problem_name_norm)
 
-add_library($problem_name_norm
-  SHARED
-  STATIC
+add_executable($problem_name_norm
   \${SOURCE_FILES}
 )
 
 EOF
 
-(cd "$problem_name" && cmake -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+(mkdir -p "${problem_name}/build" && cd "$_" && cmake -S .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
 
 vim '+/int main' \
 '+noh' \
