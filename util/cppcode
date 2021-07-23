@@ -27,6 +27,7 @@ cat >"$source_file" <<'EOF'
 #include <queue>
 #include <tuple>
 #include <algorithm>
+#include <sstream>
 
 using namespace std;
 
@@ -42,7 +43,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project($problem_name_norm)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+set(CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -std=c++11 -O0")
 
 set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES \${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 
@@ -54,7 +55,10 @@ add_executable($problem_name_norm
 
 EOF
 
-(mkdir -p "${problem_name}/build" && cd "$_" && cmake -S .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON)
+(mkdir -p "${problem_name}/build" \
+  && cd "$_" \
+  && cmake -S .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+)
 
 vim '+/int main' \
 '+noh' \
