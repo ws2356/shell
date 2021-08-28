@@ -202,3 +202,135 @@ if ! declare -F lru_entry >/dev/null ; then
 else
   echo "Duplicated func definition, ignoring: lru_entry @${BASH_SOURCE[0]}:${LINENO}"
 fi
+
+if ! declare -F semvercmp >/dev/null ; then
+  semvercmp() {
+    # semver format: [v]<major>.<minor>.<patch>[-<alpha|beta>[num]]
+    # return: 0 equal; 1 less than; 2 greater than; 3 error
+    if [ "$#" -ne 2 ] ; then
+      return 3
+    fi
+    local major=()
+    local minor=()
+    local patch=()
+    local stage=()
+    local stagever=()
+    local tmpsemver=
+    while [ $# -gt 0 ] ; do
+      tmpsemver="$1" ; shift
+      if ! [[ "$tmpsemver" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+)(-(alpha|beta)([0-9]+)?)?$ ]] ; then
+        return 3
+      fi
+      major+=("${BASH_REMATCH[1]}")
+      minor+=("${BASH_REMATCH[2]}")
+      patch+=("${BASH_REMATCH[3]}")
+      stage+=("${BASH_REMATCH[5]:+${BASH_REMATCH[5]}}")
+      stagever+=("${BASH_REMATCH[6]:+${BASH_REMATCH[6]}}")
+    done
+
+    if [ "${major[0]}" -lt "${major[1]}" ] ; then
+      return 1
+    elif [ "${major[0]}" -gt "${major[1]}" ] ; then
+      return 2
+    fi
+    if [ "${minor[0]}" -lt "${minor[1]}" ] ; then
+      return 1
+    elif [ "${minor[0]}" -gt "${minor[1]}" ] ; then
+      return 2
+    fi
+    if [ "${patch[0]}" -lt "${patch[1]}" ] ; then
+      return 1
+    elif [ "${patch[0]}" -gt "${patch[1]}" ] ; then
+      return 2
+    fi
+    if [ -n "${stage[0]}" ] && [ -z "${stage[1]}" ] ; then
+      return 1
+    elif [ -z "${stage[0]}" ] && [ -n "${stage[1]}" ] ; then
+      return 2
+    fi
+    if [ -n "${stage[0]}" ] && [[ "${stage[0]}" < "${stage[1]}" ]] ; then
+      return 1
+    elif [ -n "${stage[0]}" ] && [[ "${stage[0]}" > "${stage[1]}" ]] ; then
+      return 2
+    fi
+    if [ "${stagever[0]:-0}" -lt "${stagever[1]:-0}" ] ; then
+      return 1
+    elif [ "${stagever[0]:-0}" -gt "${stagever[1]:-0}" ] ; then
+      return 2
+    fi
+    return 0
+  }
+  export -f semvercmp
+else
+  echo "Duplicated func definition, ignoring: semvercmp @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F issemver >/dev/null ; then
+  issemver() {
+    local version=$1
+    if semvercmp "$version" "1.0.0" ; [ "$?" -ne 3 ] ; then
+      return 0
+    else
+      return 1
+    fi
+  }
+  export -f issemver
+else
+  echo "Duplicated func definition, ignoring: issemver @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+
+if ! declare -F findmax >/dev/null ; then
+  findmax() {
+    if [ $# -ne 2 ] ; then
+      return 1
+    fi
+    local arr_name=$1
+    local cmp=$2
+
+    local arr_len=0
+    eval "arr_len=\${#${arr_name}[@]}"
+    if [ $arr_len -le 0 ]; then
+      return 1
+    fi
+
+    local ret=
+    eval "ret=\${${arr_name}[0]}"
+
+    for ((i = 1; i < arr_len ; ++i)) ; do
+      eval "if \"$cmp\" \"\$ret\" \"\${${arr_name}[i]}\" ; [ \$? -eq 1 ] ; then ret=\${${arr_name}[i]} ; fi"
+    done
+
+    printf "%s" "$ret"
+  }
+  export -f findmax
+else
+  echo "Duplicated func definition, ignoring: findmax @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
+if ! declare -F firstmatch >/dev/null ; then
+  firstmatch() {
+    if [ $# -ne 2 ] ; then
+      return 1
+    fi
+    local arr_name=$1
+    local filter=$2
+
+    local arr_len=0
+    eval "arr_len=\${#${arr_name}[@]}"
+    if [ $arr_len -le 0 ]; then
+      return 1
+    fi
+
+    local ret=
+    for ((i = 0; i < arr_len ; ++i)) ; do
+      eval "if \"$filter\" \"\${${arr_name}[i]}\" ; then printf %s \"\${${arr_name}[i]}\" ; return 0 ; fi"
+    done
+
+    return 1
+  }
+  export -f firstmatch
+else
+  echo "Duplicated func definition, ignoring: firstmatch @${BASH_SOURCE[0]}:${LINENO}"
+fi
+
