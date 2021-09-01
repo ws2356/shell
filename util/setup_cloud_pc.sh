@@ -15,5 +15,3 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get update
 sudo apt-get install docker-ce
 sudo usermod -aG docker "$USER"
-
-docker run -e PASSWORD=XXXXXXXX -e SERVER_ADDR=0.0.0.0  -e SERVER_PORT=1080 -e  METHOD=aes-256-cfb -p 2022:1080  -d --name ssO--restart always  shadowsocks/shadowsocks-libev

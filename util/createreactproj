@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -eu
+
+show_help() {
+  echo "$0 <proj name or path>"
+}
+
+proj_path=
+while [ "$#" -gt 0 ] ; do
+  case "$1" in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    *)
+      proj_path=$1
+      shift
+      ;;
+  esac
+done
+if [ -z "$proj_path" ] ; then
+  show_help
+  exit 1
+fi
+if [ -d "$proj_path" ] ; then
+  echo "$proj_path already exists"
+  exit 1
+fi
+if ! [[ "$proj_path" =~ ^/ ]] ; then
+  proj_path="$(pwd)/$proj_path"
+fi
+
+proj_name=$(basename "$proj_path")
+if [ "$proj_name" = '.' ] ; then
+  show_help
+  exit 1
+fi
+
+proj_parent_dir=$(dirname "$proj_path")
+mkdir -p "$proj_parent_dir"
+
+repo_url='git@github.com:ws2356/react-scaffold.git'
+tmpdir="$(mktemp -d)"
+tmprepo="$tmpdir/$proj_name"
+
+git clone "$repo_url" "$tmprepo" && rm -rf "$tmprepo/.git"
+
+jq \
+  "(to_entries + [{\"key\": \"name\", \"value\": \"$proj_name\"}]) | from_entries" \
+  < "$tmprepo/package.json" >"$tmprepo/package.json.tmp"
+
+mv "$tmprepo/package.json.tmp" "$tmprepo/package.json"
+mv "$tmprepo" "$proj_parent_dir"
