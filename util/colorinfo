@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -eu
+
+show_help() {
+  printf 'Usage 1: %s <hex, e.g. #BADBAD>\n' "$0"
+  printf 'Usage 2: %s <red, decimal, e.g. 186 > '\
+' <green, decimal, e.g. 219 > '\
+'<red, decimal, e.g. 173 > '\
+'[alpha, decimal, e.g. 0.5]\n' "$0"
+}
+
+parsehex() {
+  colorval="${1/##/}"
+  local -a parts=("0x${colorval:0:2}" \
+  "0x${colorval:2:2}" \
+  "0x${colorval:4:2}")
+  if [ "${#colorval}" -eq 8 ] ; then
+    local alpha="0x${colorval:6:2}"
+    parts+=("$(printf 'scale=6; %d / 256 \n' "$alpha" | bc)")
+  fi
+  render "${parts[@]}"
+}
+
+parsergba() {
+  if [ $# -lt 3 ] ; then
+    show_help
+    exit 1
+  fi
+  render "$@"
+}
+
+render() {
+  if [ $# -eq 3 ] ;  then
+    printf 'rgb: %d %d %d\n' "$@"
+  elif [ $# -eq 4 ] ; then
+    printf 'rgba: %d %d %d %f\n' "$@"
+  else
+    show_help
+    exit 1
+  fi
+  renderhex "$@"
+  renderint "$@"
+}
+
+renderhex() {
+  if [ $# -eq 3 ] ; then
+    printf 'hex: #%x%x%x\n' "$@"
+  else
+    local -a vals=("$@")
+    vals[3]="$(printf 'scale=6; %f * 256\n' "${vals[3]}" | bc )"
+    vals[3]="$(printf '%.0f' "${vals[3]}")"
+    printf 'hex: #%x%x%x%x\n' "${vals[@]}"
+  fi
+}
+
+renderint() {
+  local val=0
+  local part=0
+  for ((i = 1; i <= 3; ++i)) ; do
+    part="$1"
+    shift
+    val=$((val * 256 + "$part"))
+  done
+  printf 'int: %d\n' "$val"
+}
+
+if [ $# -eq 1 ] && [[ "$1" =~ ^# ]] ; then
+  parsehex "$@"
+else
+  parsergba "$@"
+fi
