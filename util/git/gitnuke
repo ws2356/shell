@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -eu
+
+local_del=()
+remote_del=()
+
+for b in "$@" ; do
+  local_del+=("$b")
+  remote_del+=(":$b")
+done
+
+if [ ${#local_del[*]} -gt 0 ] ; then
+  git branch -D "${local_del[@]}"
+fi
+
+if [ ${#remote_del[*]} -gt 0 ] ; then
+  git push origin "${remote_del[@]}"
+fi
