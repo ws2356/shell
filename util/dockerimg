@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -eu
+
+docker image list --format 'table {{.ID}}\t{{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}\t{{if eq "<none>" .Tag .Repository}}{{.ID}}{{else}}{{.Repository}}:{{.Tag}}{{end}}'
