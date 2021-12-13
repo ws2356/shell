@@ -15,4 +15,4 @@ fi
 filelist=("$@")
 
 du -sh "${filelist[@]}" | \
-  sed -n -E '/^([[:digit:]]{3}M|[[:digit:]]+(\.[[:digit:]]+)?G)/p'
+  sed -n -E '/^[[:space:]]*([[:digit:]]{2,}M|[[:digit:]]+(\.[[:digit:]]+)?G)/p'
