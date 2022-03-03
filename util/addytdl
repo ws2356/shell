@@ -5,9 +5,10 @@ outputfile="$1"
 
 printf 'Input url & matchTitle each on its own line, like:\n'\
 'https://www.youtube.com?v=xxxx\n'\
-'a very interesting video\n'
+'a very interesting video\n'\
+'============================\n'
 read -r url
 read -r matchTitle
 
-printf '{"url":"%s","matchTitle":"%s"}\n' "$url" "$matchTitle" \
+printf '[{"url":"%s","matchTitle":"%s"}]\n' "$url" "$matchTitle" \
   > "$outputfile"
