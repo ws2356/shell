@@ -2,16 +2,21 @@
 set -eu
 
 help_exit() {
-  echo "  Usage: $0 [<--certs> | <-h>] <.mobileprovision file>"
+  echo "  Usage: $0 [--certs] [--der-encoded] [-h] <.mobileprovision file>"
   exit 0
 }
 
 parse_certs=false
+parse_der_encoded=false
 args=()
 while [ "$#" -gt 0 ] ; do
   case "$1" in
     --certs)
       parse_certs=true
+      shift
+      ;;
+    --der-encoded)
+      parse_der_encoded=true
       shift
       ;;
     -h)
@@ -38,15 +43,13 @@ fi
 output_dir="$(basename "$ppfile" .mobileprovision)"
 xml_file="${output_dir}/xml.mobileprovision"
 certs_dir="${output_dir}/certs"
+der_encoded_profile_file="${output_dir}/der_encoded_profile.der"
+asn1_encoded_profile_file="${output_dir}/asn1_encoded_profile.txt"
 
 rm -rf "${output_dir}" 2>/dev/null || true
 mkdir -p "$output_dir"
 
 security cms -D -i "$ppfile" >"$xml_file"
-
-if ! $parse_certs ; then
-  exit
-fi
 
 get_name() {
   xmlstarlet sel -t -v "/plist/dict/key[text() = 'Name']/following-sibling::*[1]" "$xml_file"  2>/dev/null
@@ -60,18 +63,29 @@ get_developer_certs() {
   xmlstarlet sel -t -v "/plist/dict/key[text() = 'DeveloperCertificates']/following-sibling::*[1]" "$xml_file"  2>/dev/null
 }
 
-index=1
-mkdir -p "$certs_dir"
-{
-  while line='' && read -r line || [ -n "$line" ] ; do
-    if [[ "$line" =~ ^[[:space:]]*$ ]] ; then
-      continue
-    fi
-    derfile="${certs_dir}/${index}.cer"
-    textfile="${certs_dir}/${index}.txt"
-    echo "$line" | base64 -d -i - -o "$derfile" || true
-    openssl x509 -inform DER -in "$derfile" -text -noout >"$textfile" || true
-    ((++index));
-  done
-} < <(get_developer_certs)
+get_der_encoded_profile() {
+  xmlstarlet sel -t -v "/plist/dict/key[text() = 'DER-Encoded-Profile']/following-sibling::*[1]" "$xml_file"  2>/dev/null
+}
+
+if $parse_der_encoded ;  then
+  get_der_encoded_profile | base64 -d -o "$der_encoded_profile_file"
+  openssl asn1parse  -inform DER -i -in "$der_encoded_profile_file" > "$asn1_encoded_profile_file"
+fi
+
+if $parse_certs ; then
+  index=1
+  mkdir -p "$certs_dir"
+  {
+    while line='' && read -r line || [ -n "$line" ] ; do
+      if [[ "$line" =~ ^[[:space:]]*$ ]] ; then
+        continue
+      fi
+      derfile="${certs_dir}/${index}.cer"
+      textfile="${certs_dir}/${index}.txt"
+      echo "$line" | base64 -d -i - -o "$derfile" || true
+      openssl x509 -inform DER -in "$derfile" -text -noout >"$textfile" || true
+      ((++index));
+    done
+  } < <(get_developer_certs)
+fi
 
