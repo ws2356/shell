@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -eu
+
+# T0: total loan
+# P: interest by year
+# N: number of year
+# Mul: output result * Mul
+
+Mul="${Mul:-1}"
+scale="${scale:-10}"
+
+calc_() {
+  echo "scale=$scale ; $*" | bc
+}
+
+# r: P / 12
+# R = 1 + r
+r=$(calc_ "$P / 12")
+R=$(calc_ "$r + 1")
+N12=$(calc_ "$N * 12")
+R_N12=$(calc_ "$R ^ $N12")
+R_N12_1=$(calc_ "$R_N12 - 1")
+M=$(calc_ "$T0 * $R_N12 * $r / $R_N12_1")
+
+calc_ "$Mul * $M"
+
