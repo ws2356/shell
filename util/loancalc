@@ -6,6 +6,11 @@ set -eu
 # N: number of year
 # Mul: output result * Mul
 
+read -r -p $'Format: T0 - total load\n' T0
+read -r -p $'Format: P - interest per year\n' P
+read -r -p $'Format: N - number of year\n' N
+read -r -p $'Format: Mul - multiplies output by Mul, default 1\n' Mul
+
 Mul="${Mul:-1}"
 scale="${scale:-10}"
 
@@ -18,6 +23,7 @@ calc_() {
 r=$(calc_ "$P / 12")
 R=$(calc_ "$r + 1")
 N12=$(calc_ "$N * 12")
+N12="${N12%.*}"
 R_N12=$(calc_ "$R ^ $N12")
 R_N12_1=$(calc_ "$R_N12 - 1")
 M=$(calc_ "$T0 * $R_N12 * $r / $R_N12_1")
