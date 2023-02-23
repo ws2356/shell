@@ -1,1 +1,21 @@
+#!/usr/bin/env bash
+set -eu
 
+nvmsh="${NVM_DIR}/nvm.sh"
+if [ -r "$nvmsh" ] ; then
+  . "$nvmsh"
+fi
+
+node_bin=$(nvm which node)
+node_bindir=$(dirname "$node_bin")
+extra_node_path="$node_bindir/../lib/node_modules"
+
+if [ -n "${NODE_PATH:-}" ] ; then
+  export NODE_PATH="${NODE_PATH}:$extra_node_path"
+else
+  export NODE_PATH="$extra_node_path"
+fi
+
+echo "added node path: $extra_node_path"
+
+node "$@"
