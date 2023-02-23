@@ -14,5 +14,11 @@ fi
 
 filelist=("$@")
 
+if [ -r 'dularge.txt' ] ; then
+  echo "Cached scan results:"
+  cat dularge.txt
+fi
+
 du -sh "${filelist[@]}" | \
-  sed -n -E '/^[[:space:]]*([[:digit:]]{2,}M|[[:digit:]]+(\.[[:digit:]]+)?G)/p'
+  sed -n -E '/^[[:space:]]*([[:digit:]]{2,}M|[[:digit:]]+(\.[[:digit:]]+)?G)/p' | \
+  (tee -a dularge.txt || cat)
