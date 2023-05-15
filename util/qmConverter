@@ -64,16 +64,16 @@ function getI(i) {
       continue
     }
 
-    try {
-      const filenameParts = file.split('.')
-      filenameParts.pop()
-      filenameParts.push(sufOut)
-      const fileOut = filenameParts.join('.')
+    const filenameParts = file.split('.')
+    filenameParts.pop()
+    filenameParts.push(sufOut)
+    const fileOut = filenameParts.join('.')
 
+    try {
       await writeFileAsync(fileOut, bytesOut)
       console.log(`done: ${fileOut}`)
     } catch (error) {
-      console.error(`failed to write file: ${file}, error: ${error}`)
+      console.error(`failed to write file: ${fileOut}, error: ${error}`)
     }
   }
 })()
